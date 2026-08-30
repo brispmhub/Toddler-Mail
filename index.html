@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
-    /* 1. Global Reset & Touch Restrictions */
+    /* Global Reset & Touch Control */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -33,19 +33,19 @@
     .app-wrapper {
       width: 100%;
       height: 100%;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
     }
 
-    /* 2. Email Display Window */
+    /* Email Card Window */
     .email-container {
       background: #ffffff;
-      border-radius: 24px;
-      padding: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
       transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease;
       flex-shrink: 0;
       z-index: 10;
@@ -57,40 +57,64 @@
       align-items: center;
       border-bottom: 2px solid #f1f5f9;
       padding-bottom: 12px;
-      gap: 12px;
+      gap: 10px;
     }
 
     .recipient-wrapper {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex: 1;
     }
 
     .to-label {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
       color: #64748b;
     }
 
     /* Recipient Dropdown */
     .recipient-select {
-      font-size: 22px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: bold;
       color: #2563eb;
-      background-color: #eff6ff;
-      border: 2px solid #bfdbfe;
-      border-radius: 14px;
-      padding: 8px 14px;
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 12px;
+      padding: 6px 10px;
       outline: none;
       cursor: pointer;
       font-family: inherit;
       touch-action: manipulation;
-      max-width: 80%;
     }
 
-    .recipient-select:focus {
-      border-color: #3b82f6;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* X / Clear Button */
+    .clear-btn {
+      background: #fee2e2;
+      color: #ef4444;
+      border: 2px solid #fca5a5;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      font-size: 20px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      box-shadow: 0 3px 8px rgba(239, 68, 68, 0.2);
+    }
+
+    .clear-btn:active {
+      transform: scale(0.92);
+      background: #fecaca;
     }
 
     /* Bright Send Button */
@@ -98,14 +122,13 @@
       background: #22c55e;
       color: white;
       border: none;
-      border-radius: 50px;
-      padding: 14px 28px;
-      font-size: 22px;
+      border-radius: 40px;
+      padding: 10px 22px;
+      font-size: 20px;
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
       touch-action: none;
-      flex-shrink: 0;
     }
 
     .send-btn:active {
@@ -113,14 +136,14 @@
       background: #16a34a;
     }
 
-    /* Typing Area */
+    /* Typing Display Area */
     .email-content {
-      min-height: 110px;
-      max-height: 140px;
-      font-size: 32px;
+      min-height: 100px;
+      max-height: 130px;
+      font-size: 30px;
       font-weight: 600;
       color: #1e293b;
-      padding-top: 16px;
+      padding-top: 14px;
       overflow-y: auto;
       word-wrap: break-word;
     }
@@ -129,22 +152,22 @@
       color: #94a3b8;
     }
 
-    /* Flying Envelope Animation */
+    /* Flying Envelope State */
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
     }
 
-    /* 3. Keyboard Container */
+    /* Keyboard Container */
     .keyboard {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 16px;
-      border-radius: 24px;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 14px;
+      border-radius: 20px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-      margin-bottom: 10px;
+      margin-bottom: 6px;
       touch-action: none;
       z-index: 10;
     }
@@ -152,20 +175,20 @@
     .kb-row {
       display: flex;
       justify-content: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .key {
       background: #ffffff;
       border: 1px solid #cbd5e1;
       border-bottom: 4px solid #94a3b8;
-      border-radius: 12px;
-      font-size: 26px;
+      border-radius: 10px;
+      font-size: 24px;
       font-weight: bold;
       color: #1e293b;
-      height: 62px;
+      height: 58px;
       flex: 1;
-      max-width: 68px;
+      max-width: 66px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -180,7 +203,7 @@
     }
 
     .key.backspace {
-      max-width: 90px;
+      max-width: 86px;
       background: #fee2e2;
       border-color: #fca5a5;
       border-bottom-color: #f87171;
@@ -194,7 +217,7 @@
       color: #64748b;
     }
 
-    /* 4. Confetti Container & Particle Styling */
+    /* Confetti Particle Styles */
     .confetti-layer {
       position: absolute;
       top: 0;
@@ -203,7 +226,7 @@
       height: 100%;
       pointer-events: none;
       overflow: hidden;
-      z-index: 99;
+      z-index: 999;
     }
 
     .confetti-piece {
@@ -211,17 +234,17 @@
       width: 14px;
       height: 14px;
       border-radius: 3px;
-      animation: fallDown 1.2s ease-out forwards;
+      animation: confettiFall 1.2s ease-out forwards;
     }
 
-    @keyframes fallDown {
+    @keyframes confettiFall {
       0% {
         opacity: 1;
         transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
       }
       100% {
         opacity: 0;
-        transform: translateY(750px) rotateX(720deg) rotateY(360deg) scale(0.6);
+        transform: translateY(700px) rotateX(720deg) rotateY(360deg) scale(0.5);
       }
     }
   </style>
@@ -229,14 +252,15 @@
 <body>
 
   <div class="app-wrapper">
-    <!-- Confetti Explosion Layer -->
+    <!-- Confetti Layer -->
     <div class="confetti-layer" id="confettiLayer"></div>
 
-    <!-- Email Display Area -->
+    <!-- Email Compose Card -->
     <div class="email-container" id="emailCard">
       <div class="email-header">
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
+          <!-- Recipient Dropdown List -->
           <select class="recipient-select" id="recipientSelect">
             <option value="Gaga">Gaga 👨</option>
             <option value="Mama">Mama 👩</option>
@@ -245,8 +269,15 @@
             <option value="Uncle Dado">Uncle Dado 🧔</option>
           </select>
         </div>
-        <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
+
+        <div class="header-actions">
+          <!-- X / Clear Button -->
+          <button class="clear-btn" id="clearBtn" type="button" title="Clear">✖</button>
+          <!-- Send Button -->
+          <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
+        </div>
       </div>
+
       <div class="email-content" id="emailContent">
         <span class="placeholder">Tap keys to write...</span>
       </div>
@@ -303,10 +334,10 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            console.log('Service Worker registered:', reg.scope);
+            console.log('Service Worker Active:', reg.scope);
           })
           .catch(function(err) {
-            console.log('Service Worker registration failed:', err);
+            console.warn('SW registration issue:', err);
           });
       });
     }
@@ -315,81 +346,11 @@
     var isSending = false;
     var audioCtx = null;
     var recipientSelect = document.getElementById('recipientSelect');
+    var emailContent = document.getElementById('emailContent');
+    var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Spoken Voice Engine (Speech Synthesis) ---
-    function speakText(text) {
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel(); // Cancel any ongoing speech
-          var utterance = new SpeechSynthesisUtterance(text);
-          utterance.rate = 0.95; // Slightly slower, clear pace for toddlers
-          utterance.pitch = 1.15; // Slightly cheerful, friendly pitch
-          window.speechSynthesis.speak(utterance);
-        }
-      } catch (err) {
-        console.warn('Speech synthesis error:', err);
-      }
-    }
-
-    // Speak recipient name when changed
-    recipientSelect.addEventListener('change', function() {
-      var selectedName = recipientSelect.value;
-      speakText("To " + selectedName);
-    });
-
-    // --- 3. Prevent Double-Tap Zoom ---
-    document.addEventListener('dblclick', function(e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    var lastTouchEnd = 0;
-    document.addEventListener('touchend', function(e) {
-      var now = Date.now();
-      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
-        return;
-      }
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-
-    // --- 4. Confetti Animation Generator ---
-    function spawnConfetti() {
-      var container = document.getElementById('confettiLayer');
-      var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
-      var totalPieces = 45;
-
-      for (var i = 0; i < totalPieces; i++) {
-        var piece = document.createElement('div');
-        piece.className = 'confetti-piece';
-        
-        // Randomize initial position across the top half of the screen
-        piece.style.left = (Math.random() * 95) + '%';
-        piece.style.top = (Math.random() * 20 + 5) + '%';
-        
-        // Random color & size
-        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        var size = (Math.random() * 8 + 10) + 'px';
-        piece.style.width = size;
-        piece.style.height = size;
-        if (Math.random() > 0.5) piece.style.borderRadius = '50%'; // Circle or square
-        
-        // Stagger animation timing
-        piece.style.animationDelay = (Math.random() * 0.25) + 's';
-        piece.style.animationDuration = (Math.random() * 0.5 + 0.9) + 's';
-
-        container.appendChild(piece);
-      }
-
-      // Clean up DOM elements after animation completes
-      setTimeout(function() {
-        container.innerHTML = '';
-      }, 1500);
-    }
-
-    // --- 5. Sound Synthesizer (Tap & Swoosh) ---
-    function playSound(type) {
+    // --- 2. Reliable Audio & Voice Engine ---
+    function unlockAudioSystem() {
       try {
         if (!audioCtx) {
           var AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -400,8 +361,32 @@
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
-        if (!audioCtx) return;
+      } catch (e) {}
+    }
 
+    function speakVoice(text) {
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          var utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.9;
+          utterance.pitch = 1.1;
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (err) {}
+    }
+
+    // Announce selected recipient on dropdown change
+    recipientSelect.addEventListener('change', function() {
+      unlockAudioSystem();
+      speakVoice("To " + recipientSelect.value);
+    });
+
+    // --- 3. Synthesized Sound Effects ---
+    function playTone(type) {
+      unlockAudioSystem();
+      if (!audioCtx) return;
+      try {
         if (type === 'tap') {
           var osc = audioCtx.createOscillator();
           var gain = audioCtx.createGain();
@@ -414,6 +399,18 @@
           gain.connect(audioCtx.destination);
           osc.start();
           osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'clear') {
+          var osc2 = audioCtx.createOscillator();
+          var gain2 = audioCtx.createGain();
+          osc2.type = 'sawtooth';
+          osc2.frequency.setValueAtTime(300, audioCtx.currentTime);
+          osc2.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+          gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain2.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          osc2.connect(gain2);
+          gain2.connect(audioCtx.destination);
+          osc2.start();
+          osc2.stop(audioCtx.currentTime + 0.15);
         } else if (type === 'whoosh') {
           var bufferSize = audioCtx.sampleRate * 0.5;
           var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
@@ -441,20 +438,42 @@
       } catch (err) {}
     }
 
-    // --- 6. Screen Updates & Send Flow ---
-    function updateDisplay() {
-      var display = document.getElementById('emailContent');
-      if (currentText.length === 0) {
-        display.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
-      } else {
-        display.textContent = currentText;
+    // --- 4. Confetti Animation ---
+    function triggerConfetti() {
+      var container = document.getElementById('confettiLayer');
+      var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+      for (var i = 0; i < 45; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = (Math.random() * 95) + '%';
+        piece.style.top = (Math.random() * 20 + 5) + '%';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        var size = (Math.random() * 8 + 10) + 'px';
+        piece.style.width = size;
+        piece.style.height = size;
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        piece.style.animationDelay = (Math.random() * 0.25) + 's';
+        piece.style.animationDuration = (Math.random() * 0.5 + 0.9) + 's';
+        container.appendChild(piece);
       }
-      display.scrollTop = display.scrollHeight;
+      setTimeout(function() {
+        container.innerHTML = '';
+      }, 1500);
+    }
+
+    // --- 5. Screen Actions ---
+    function updateDisplay() {
+      if (currentText.length === 0) {
+        emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
+      } else {
+        emailContent.textContent = currentText;
+      }
+      emailContent.scrollTop = emailContent.scrollHeight;
     }
 
     function handleKey(val) {
       if (isSending) return;
-      playSound('tap');
+      playTone('tap');
       if (val === 'BACKSPACE') {
         currentText = currentText.slice(0, -1);
       } else {
@@ -463,48 +482,64 @@
       updateDisplay();
     }
 
-    function executeSend() {
+    function clearEmail() {
+      if (isSending) return;
+      playTone('clear');
+      currentText = "";
+      updateDisplay();
+    }
+
+    function sendEmail() {
       if (isSending) return;
       isSending = true;
 
       var recipientName = recipientSelect.value;
 
-      // 1. Play Whoosh Sound & Trigger Flying Animation
-      playSound('whoosh');
-      spawnConfetti();
+      playTone('whoosh');
+      triggerConfetti();
+      emailCard.classList.add('flying');
 
-      var card = document.getElementById('emailCard');
-      card.classList.add('flying');
-
-      // 2. Speak confirmation: "Email sent to [Recipient]!"
       setTimeout(function() {
-        speakText("Email sent to " + recipientName + "!");
-      }, 250);
+        speakVoice("Email sent to " + recipientName + "!");
+      }, 200);
 
-      // 3. Reset screen after flight completes
       setTimeout(function() {
         currentText = "";
         updateDisplay();
-        card.style.transition = 'none';
-        card.classList.remove('flying');
+        emailCard.style.transition = 'none';
+        emailCard.classList.remove('flying');
 
         setTimeout(function() {
-          card.style.transition = '';
+          emailCard.style.transition = '';
           isSending = false;
         }, 50);
       }, 850);
     }
 
-    // --- 7. Touch Event Binding ---
+    // --- 6. Gesture & Touch Binding ---
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+        return;
+      }
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
     function bindAction(element, callback) {
       var touchHandled = false;
-
       element.addEventListener('touchstart', function(e) {
         e.preventDefault();
         touchHandled = true;
         callback();
       }, { passive: false });
-
       element.addEventListener('click', function(e) {
         if (!touchHandled) {
           callback();
@@ -513,6 +548,7 @@
       });
     }
 
+    // Bind Keys
     var keys = document.querySelectorAll('.key');
     for (var i = 0; i < keys.length; i++) {
       (function(btn) {
@@ -523,10 +559,9 @@
       })(keys[i]);
     }
 
-    var sendBtn = document.getElementById('sendBtn');
-    bindAction(sendBtn, function() {
-      executeSend();
-    });
+    // Bind Send & Clear Buttons
+    bindAction(document.getElementById('sendBtn'), sendEmail);
+    bindAction(document.getElementById('clearBtn'), clearEmail);
   </script>
 </body>
 </html>
