@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Toddler Mail">
+  <title>Toddler Mail</title>
+  <style>
+    /* Complete Gesture & Touch Lock */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      background: linear-gradient(135deg, #e0f2fe, #f0fdf4);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Email Display Window */
+    .email-container {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease;
+      flex-shrink: 0;
+    }
+
+    .email-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 12px;
+    }
+
+    .recipient {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    /* Bright Send Button */
+    .send-btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 28px;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+      touch-action: none;
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+      background: #16a34a;
+    }
+
+    /* Content Area */
+    .email-content {
+      min-height: 110px;
+      max-height: 140px;
+      font-size: 32px;
+      font-weight: 600;
+      color: #1e293b;
+      padding-top: 16px;
+      overflow-y: auto;
+      word-wrap: break-word;
+    }
+
+    .placeholder {
+      color: #94a3b8;
+    }
+
+    /* Animation State */
+    .flying {
+      transform: translate(600px, -800px) scale(0.1) rotate(20deg);
+      opacity: 0;
+    }
+
+    /* Keyboard Layout */
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 16px;
+      border-radius: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      margin-bottom: 10px;
+      touch-action: none;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .key {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-bottom: 4px solid #94a3b8;
+      border-radius: 12px;
+      font-size: 26px;
+      font-weight: bold;
+      color: #1e293b;
+      height: 62px;
+      flex: 1;
+      max-width: 68px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .key:active {
+      transform: translateY(3px);
+      border-bottom-width: 1px;
+      background: #f1f5f9;
+    }
+
+    .key.backspace {
+      max-width: 90px;
+      background: #fee2e2;
+      border-color: #fca5a5;
+      border-bottom-color: #f87171;
+      color: #dc2626;
+    }
+
+    .key.space {
+      max-width: 380px;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Email Preview -->
+    <div class="email-container" id="emailCard">
+      <div class="email-header">
+        <div class="recipient">To: Grandma & Grandpa 💌</div>
+        <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
+      </div>
+      <div class="email-content" id="emailContent">
+        <span class="placeholder">Tap keys to write...</span>
+      </div>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard" id="keyboard">
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Q">Q</button>
+        <button type="button" class="key" data-k="W">W</button>
+        <button type="button" class="key" data-k="E">E</button>
+        <button type="button" class="key" data-k="R">R</button>
+        <button type="button" class="key" data-k="T">T</button>
+        <button type="button" class="key" data-k="Y">Y</button>
+        <button type="button" class="key" data-k="U">U</button>
+        <button type="button" class="key" data-k="I">I</button>
+        <button type="button" class="key" data-k="O">O</button>
+        <button type="button" class="key" data-k="P">P</button>
+      </div>
+      <div class="kb-row">
+        <button type="button" class="key" data-k="A">A</button>
+        <button type="button" class="key" data-k="S">S</button>
+        <button type="button" class="key" data-k="D">D</button>
+        <button type="button" class="key" data-k="F">F</button>
+        <button type="button" class="key" data-k="G">G</button>
+        <button type="button" class="key" data-k="H">H</button>
+        <button type="button" class="key" data-k="J">J</button>
+        <button type="button" class="key" data-k="K">K</button>
+        <button type="button" class="key" data-k="L">L</button>
+      </div>
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Z">Z</button>
+        <button type="button" class="key" data-k="X">X</button>
+        <button type="button" class="key" data-k="C">C</button>
+        <button type="button" class="key" data-k="V">V</button>
+        <button type="button" class="key" data-k="B">B</button>
+        <button type="button" class="key" data-k="N">N</button>
+        <button type="button" class="key" data-k="M">M</button>
+        <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
+      </div>
+      <div class="kb-row">
+        <button type="button" class="key space" data-k=" ">SPACE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. Offline Cache Setup (Service Worker) ---
+    if ('serviceWorker' in navigator) {
+      // Inline Service Worker blob to keep the app in a single file
+      var swCode = "self.addEventListener('install', function(e) { self.skipWaiting(); });" +
+                   "self.addEventListener('activate', function(e) { e.waitUntil(clients.claim()); });" +
+                   "self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(function() { return caches.match(e.request); })); });";
+      var blob = new Blob([swCode], { type: 'text/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function() {});
+    }
+
+    var currentText = "";
+    var isSending = false;
+    var audioCtx = null;
+
+    // --- 2. Prevent Double-Tap Zoom ---
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // --- 3. Sound Effects ---
+    function playSound(type) {
+      try {
+        if (!audioCtx) {
+          var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        if (!audioCtx) return;
+
+        if (type === 'tap') {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'whoosh') {
+          var bufferSize = audioCtx.sampleRate * 0.5;
+          var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          var data = buffer.getChannelData(0);
+          for (var i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+          var noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+          var filter = audioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(250, audioCtx.currentTime);
+          filter.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.25);
+          filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.5);
+          var gainWhoosh = audioCtx.createGain();
+          gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
+          gainWhoosh.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.15);
+          gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+          noise.connect(filter);
+          filter.connect(gainWhoosh);
+          gainWhoosh.connect(audioCtx.destination);
+          noise.start();
+          noise.stop(audioCtx.currentTime + 0.5);
+        }
+      } catch (err) {}
+    }
+
+    // --- 4. Screen Updates ---
+    function updateDisplay() {
+      var display = document.getElementById('emailContent');
+      if (currentText.length === 0) {
+        display.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
+      } else {
+        display.textContent = currentText;
+      }
+      display.scrollTop = display.scrollHeight;
+    }
+
+    function handleKey(val) {
+      if (isSending) return;
+      playSound('tap');
+      if (val === 'BACKSPACE') {
+        currentText = currentText.slice(0, -1);
+      } else {
+        currentText += val;
+      }
+      updateDisplay();
+    }
+
+    function executeSend() {
+      if (isSending) return;
+      isSending = true;
+
+      playSound('whoosh');
+
+      var card = document.getElementById('emailCard');
+      card.classList.add('flying');
+
+      setTimeout(function() {
+        currentText = "";
+        updateDisplay();
+        card.style.transition = 'none';
+        card.classList.remove('flying');
+
+        setTimeout(function() {
+          card.style.transition = '';
+          isSending = false;
+        }, 50);
+      }, 850);
+    }
+
+    // --- 5. Touch Binding ---
+    function bindAction(element, callback) {
+      var touchHandled = false;
+
+      element.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        touchHandled = true;
+        callback();
+      }, { passive: false });
+
+      element.addEventListener('click', function(e) {
+        if (!touchHandled) {
+          callback();
+        }
+        touchHandled = false;
+      });
+    }
+
+    var keys = document.querySelectorAll('.key');
+    for (var i = 0; i < keys.length; i++) {
+      (function(btn) {
+        var keyVal = btn.getAttribute('data-k');
+        bindAction(btn, function() {
+          handleKey(keyVal);
+        });
+      })(keys[i]);
+    }
+
+    var sendBtn = document.getElementById('sendBtn');
+    bindAction(sendBtn, function() {
+      executeSend();
+    });
+  </script>
+</body>
+</html>
