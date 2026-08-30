@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Toddler Mail">
+  <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
     /* Complete Gesture & Touch Lock */
@@ -165,7 +166,7 @@
 <body>
 
   <div class="app-wrapper">
-    <!-- Email Preview -->
+    <!-- Email Display -->
     <div class="email-container" id="emailCard">
       <div class="email-header">
         <div class="recipient">To: Grandma & Grandpa 💌</div>
@@ -178,6 +179,7 @@
 
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
+      <!-- Row 1 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -190,6 +192,7 @@
         <button type="button" class="key" data-k="O">O</button>
         <button type="button" class="key" data-k="P">P</button>
       </div>
+      <!-- Row 2 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -201,6 +204,7 @@
         <button type="button" class="key" data-k="K">K</button>
         <button type="button" class="key" data-k="L">L</button>
       </div>
+      <!-- Row 3 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -211,6 +215,7 @@
         <button type="button" class="key" data-k="M">M</button>
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
+      <!-- Row 4 -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
       </div>
@@ -218,14 +223,17 @@
   </div>
 
   <script>
-    // --- 1. Offline Cache Setup (Service Worker) ---
+    // --- 1. Service Worker Registration ---
     if ('serviceWorker' in navigator) {
-      // Inline Service Worker blob to keep the app in a single file
-      var swCode = "self.addEventListener('install', function(e) { self.skipWaiting(); });" +
-                   "self.addEventListener('activate', function(e) { e.waitUntil(clients.claim()); });" +
-                   "self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(function() { return caches.match(e.request); })); });";
-      var blob = new Blob([swCode], { type: 'text/javascript' });
-      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function() {});
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(reg) {
+            console.log('Offline Service Worker registered successfully:', reg.scope);
+          })
+          .catch(function(err) {
+            console.log('Service Worker registration failed:', err);
+          });
+      });
     }
 
     var currentText = "";
@@ -246,7 +254,7 @@
       lastTouchEnd = now;
     }, { passive: false });
 
-    // --- 3. Sound Effects ---
+    // --- 3. Web Audio Effects ---
     function playSound(type) {
       try {
         if (!audioCtx) {
@@ -343,7 +351,7 @@
       }, 850);
     }
 
-    // --- 5. Touch Binding ---
+    // --- 5. Touch Event Binding ---
     function bindAction(element, callback) {
       var touchHandled = false;
 

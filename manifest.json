@@ -1,0 +1,15 @@
+{
+  "name": "Toddler Mail",
+  "short_name": "ToddlerMail",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e0f2fe",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/732/732200.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
