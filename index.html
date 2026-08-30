@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
-    /* Complete Gesture & Touch Lock */
+    /* 1. Global Reset & Touch Restrictions */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -37,9 +37,10 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      position: relative;
     }
 
-    /* Email Display Window */
+    /* 2. Email Display Window */
     .email-container {
       background: #ffffff;
       border-radius: 24px;
@@ -47,6 +48,7 @@
       box-shadow: 0 10px 25px rgba(0,0,0,0.08);
       transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease;
       flex-shrink: 0;
+      z-index: 10;
     }
 
     .email-header {
@@ -55,12 +57,40 @@
       align-items: center;
       border-bottom: 2px solid #f1f5f9;
       padding-bottom: 12px;
+      gap: 12px;
     }
 
-    .recipient {
+    .recipient-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .to-label {
       font-size: 24px;
       font-weight: 700;
+      color: #64748b;
+    }
+
+    /* Recipient Dropdown */
+    .recipient-select {
+      font-size: 22px;
+      font-weight: 700;
       color: #2563eb;
+      background-color: #eff6ff;
+      border: 2px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 8px 14px;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+      touch-action: manipulation;
+      max-width: 80%;
+    }
+
+    .recipient-select:focus {
+      border-color: #3b82f6;
     }
 
     /* Bright Send Button */
@@ -75,6 +105,7 @@
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
       touch-action: none;
+      flex-shrink: 0;
     }
 
     .send-btn:active {
@@ -82,7 +113,7 @@
       background: #16a34a;
     }
 
-    /* Content Area */
+    /* Typing Area */
     .email-content {
       min-height: 110px;
       max-height: 140px;
@@ -98,13 +129,13 @@
       color: #94a3b8;
     }
 
-    /* Animation State */
+    /* Flying Envelope Animation */
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
     }
 
-    /* Keyboard Layout */
+    /* 3. Keyboard Container */
     .keyboard {
       display: flex;
       flex-direction: column;
@@ -115,6 +146,7 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       margin-bottom: 10px;
       touch-action: none;
+      z-index: 10;
     }
 
     .kb-row {
@@ -161,15 +193,58 @@
       letter-spacing: 2px;
       color: #64748b;
     }
+
+    /* 4. Confetti Container & Particle Styling */
+    .confetti-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 99;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      animation: fallDown 1.2s ease-out forwards;
+    }
+
+    @keyframes fallDown {
+      0% {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(750px) rotateX(720deg) rotateY(360deg) scale(0.6);
+      }
+    }
   </style>
 </head>
 <body>
 
   <div class="app-wrapper">
-    <!-- Email Display -->
+    <!-- Confetti Explosion Layer -->
+    <div class="confetti-layer" id="confettiLayer"></div>
+
+    <!-- Email Display Area -->
     <div class="email-container" id="emailCard">
       <div class="email-header">
-        <div class="recipient">To: Grandma & Grandpa 💌</div>
+        <div class="recipient-wrapper">
+          <span class="to-label">To:</span>
+          <select class="recipient-select" id="recipientSelect">
+            <option value="Gaga">Gaga 👨</option>
+            <option value="Mama">Mama 👩</option>
+            <option value="Grandma">Grandma 👵</option>
+            <option value="Grandpa">Grandpa 👴</option>
+            <option value="Uncle Dado">Uncle Dado 🧔</option>
+          </select>
+        </div>
         <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
       </div>
       <div class="email-content" id="emailContent">
@@ -228,7 +303,7 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            console.log('Offline Service Worker registered successfully:', reg.scope);
+            console.log('Service Worker registered:', reg.scope);
           })
           .catch(function(err) {
             console.log('Service Worker registration failed:', err);
@@ -239,8 +314,30 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
+    var recipientSelect = document.getElementById('recipientSelect');
 
-    // --- 2. Prevent Double-Tap Zoom ---
+    // --- 2. Spoken Voice Engine (Speech Synthesis) ---
+    function speakText(text) {
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel(); // Cancel any ongoing speech
+          var utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.95; // Slightly slower, clear pace for toddlers
+          utterance.pitch = 1.15; // Slightly cheerful, friendly pitch
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (err) {
+        console.warn('Speech synthesis error:', err);
+      }
+    }
+
+    // Speak recipient name when changed
+    recipientSelect.addEventListener('change', function() {
+      var selectedName = recipientSelect.value;
+      speakText("To " + selectedName);
+    });
+
+    // --- 3. Prevent Double-Tap Zoom ---
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
     }, { passive: false });
@@ -248,13 +345,50 @@
     var lastTouchEnd = 0;
     document.addEventListener('touchend', function(e) {
       var now = Date.now();
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+        return;
+      }
       if (now - lastTouchEnd <= 300) {
         e.preventDefault();
       }
       lastTouchEnd = now;
     }, { passive: false });
 
-    // --- 3. Web Audio Effects ---
+    // --- 4. Confetti Animation Generator ---
+    function spawnConfetti() {
+      var container = document.getElementById('confettiLayer');
+      var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+      var totalPieces = 45;
+
+      for (var i = 0; i < totalPieces; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        
+        // Randomize initial position across the top half of the screen
+        piece.style.left = (Math.random() * 95) + '%';
+        piece.style.top = (Math.random() * 20 + 5) + '%';
+        
+        // Random color & size
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        var size = (Math.random() * 8 + 10) + 'px';
+        piece.style.width = size;
+        piece.style.height = size;
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%'; // Circle or square
+        
+        // Stagger animation timing
+        piece.style.animationDelay = (Math.random() * 0.25) + 's';
+        piece.style.animationDuration = (Math.random() * 0.5 + 0.9) + 's';
+
+        container.appendChild(piece);
+      }
+
+      // Clean up DOM elements after animation completes
+      setTimeout(function() {
+        container.innerHTML = '';
+      }, 1500);
+    }
+
+    // --- 5. Sound Synthesizer (Tap & Swoosh) ---
     function playSound(type) {
       try {
         if (!audioCtx) {
@@ -307,7 +441,7 @@
       } catch (err) {}
     }
 
-    // --- 4. Screen Updates ---
+    // --- 6. Screen Updates & Send Flow ---
     function updateDisplay() {
       var display = document.getElementById('emailContent');
       if (currentText.length === 0) {
@@ -333,11 +467,21 @@
       if (isSending) return;
       isSending = true;
 
+      var recipientName = recipientSelect.value;
+
+      // 1. Play Whoosh Sound & Trigger Flying Animation
       playSound('whoosh');
+      spawnConfetti();
 
       var card = document.getElementById('emailCard');
       card.classList.add('flying');
 
+      // 2. Speak confirmation: "Email sent to [Recipient]!"
+      setTimeout(function() {
+        speakText("Email sent to " + recipientName + "!");
+      }, 250);
+
+      // 3. Reset screen after flight completes
       setTimeout(function() {
         currentText = "";
         updateDisplay();
@@ -351,7 +495,7 @@
       }, 850);
     }
 
-    // --- 5. Touch Event Binding ---
+    // --- 7. Touch Event Binding ---
     function bindAction(element, callback) {
       var touchHandled = false;
 

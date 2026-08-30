@@ -1,11 +1,11 @@
-const CACHE_NAME = 'toddler-mail-v1';
+const CACHE_NAME = 'toddler-mail-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// 1. Install Event: Save all core assets into device storage
+// 1. Install Event: Save updated files
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// 2. Activate Event: Clean up old versions of cache
+// 2. Activate Event: Remove previous v3 cache
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -31,7 +31,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. Fetch Event: Serve directly from Cache when offline
+// 3. Fetch Event: Serve cached files when offline
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
