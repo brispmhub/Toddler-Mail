@@ -302,7 +302,7 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            reg.update(); // Explicitly check GitHub for updates
+            reg.update();
           })
           .catch(function() {});
       });
@@ -311,63 +311,70 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var speechVoices = [];
-    var speechUtterances = []; // Prevents iOS garbage collection mid-speech
+    var speechUtterances = []; // Prevents iOS garbage collection
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Gentle Feminine Voice Selector for iPadOS Safari ---
-    function loadVoices() {
-      if ('speechSynthesis' in window) {
-        speechVoices = window.speechSynthesis.getVoices();
-      }
-    }
-
-    if ('speechSynthesis' in window) {
-      loadVoices();
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-    }
-
+    // --- 2. Robust Speech Synthesis for iOS WebKit ---
     function getGentleFemaleVoice() {
-      if (!speechVoices || speechVoices.length === 0) return null;
-      var femaleNames = ["Samantha", "Karen", "Moira", "Tessa", "Victoria", "Fiona", "Siri"];
-      for (var i = 0; i < femaleNames.length; i++) {
-        var match = speechVoices.find(function(v) {
-          return v.name.indexOf(femaleNames[i]) !== -1;
+      if (!('speechSynthesis' in window)) return null;
+      var voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+
+      var preferredNames = ["Samantha", "Karen", "Moira", "Tessa", "Victoria", "Fiona", "Siri"];
+      for (var i = 0; i < preferredNames.length; i++) {
+        var match = voices.find(function(v) {
+          return v.name.indexOf(preferredNames[i]) !== -1;
         });
         if (match) return match;
       }
-      return speechVoices.find(function(v) {
-        return v.lang.indexOf('en') === 0;
-      });
+      return voices.find(function(v) { return v.lang && v.lang.indexOf('en') === 0; });
     }
 
-    // iPad Touch Audio Activation
-    function primeAudio() {
+    function initSpeech() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.getVoices();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      initSpeech();
+      window.speechSynthesis.onvoiceschanged = initSpeech;
+    }
+
+    function primeAudioAndSpeech() {
+      // 1. Prime Web Audio Context
       try {
-        if (!audioCtx) {
-          var AudioClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioClass) audioCtx = new AudioClass();
+        var AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass && !audioCtx) {
+          audioCtx = new AudioClass();
         }
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
+      } catch (e) {}
+
+      // 2. Prime SpeechSynthesis
+      try {
         if ('speechSynthesis' in window) {
-          window.speechSynthesis.resume();
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
         }
       } catch (e) {}
     }
 
-    document.addEventListener('touchstart', primeAudio, { passive: true });
-    document.addEventListener('click', primeAudio);
+    // Attach primer to user touches
+    document.addEventListener('touchstart', primeAudioAndSpeech, { passive: true });
+    document.addEventListener('click', primeAudioAndSpeech);
 
-    function speakPhrase(text) {
+    function speakText(text) {
       if (!('speechSynthesis' in window)) return;
+
       try {
-        primeAudio();
-        window.speechSynthesis.cancel();
+        primeAudioAndSpeech();
+        window.speechSynthesis.cancel(); // Clear any stalled speech
         window.speechSynthesis.resume();
 
         var utterance = new SpeechSynthesisUtterance(text);
@@ -376,26 +383,34 @@
         utterance.lang = 'en-US';
 
         var voice = getGentleFemaleVoice();
-        if (voice) utterance.voice = voice;
+        if (voice) {
+          utterance.voice = voice;
+        }
 
         speechUtterances.push(utterance);
         utterance.onend = function() {
           var idx = speechUtterances.indexOf(utterance);
           if (idx > -1) speechUtterances.splice(idx, 1);
         };
+        utterance.onerror = function() {
+          var idx = speechUtterances.indexOf(utterance);
+          if (idx > -1) speechUtterances.splice(idx, 1);
+        };
 
         window.speechSynthesis.speak(utterance);
-      } catch (err) {}
+      } catch (err) {
+        console.warn('Speech error:', err);
+      }
     }
 
-    // Event listener for dropdown selection
+    // Dropdown Change Listener
     recipientSelect.addEventListener('change', function() {
-      speakPhrase("To " + recipientSelect.value);
+      speakText("To " + recipientSelect.value);
     });
 
     // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      primeAudio();
+      primeAudioAndSpeech();
       if (!audioCtx) return;
 
       try {
@@ -447,7 +462,6 @@
         piece.className = 'confetti-piece';
         piece.style.left = (Math.random() * 80 + 10) + '%';
         piece.style.top = (Math.random() * 20 + 35) + '%';
-        
         var dx = (Math.random() * 400 - 150) + 'px';
         piece.style.setProperty('--dx', dx);
         piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -495,10 +509,9 @@
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // Speak confirmation in gentle female voice
-      speakPhrase("Email sent to " + recipientName + "!");
+      // Voice confirmation
+      speakText("Email sent to " + recipientName + "!");
 
-      // Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
@@ -544,7 +557,6 @@
       });
     }
 
-    // Bind Keyboard Keys
     var keys = document.querySelectorAll('.key');
     for (var i = 0; i < keys.length; i++) {
       (function(btn) {
@@ -555,7 +567,6 @@
       })(keys[i]);
     }
 
-    // Bind Send Button
     bindAction(document.getElementById('sendBtn'), sendEmail);
   </script>
 </body>
