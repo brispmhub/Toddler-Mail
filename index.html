@@ -302,11 +302,9 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            console.log('Service Worker active:', reg.scope);
+            reg.update(); // Explicitly check GitHub for updates
           })
-          .catch(function(err) {
-            console.warn('SW error:', err);
-          });
+          .catch(function() {});
       });
     }
 
@@ -314,14 +312,13 @@
     var isSending = false;
     var audioCtx = null;
     var speechVoices = [];
-    var speechUtteranceStore = []; // Prevents garbage collection on iOS
-    var isAudioUnlocked = false;
+    var speechUtterances = []; // Prevents iOS garbage collection mid-speech
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Gentle Feminine Speech Voice Selection ---
+    // --- 2. Gentle Feminine Voice Selector for iPadOS Safari ---
     function loadVoices() {
       if ('speechSynthesis' in window) {
         speechVoices = window.speechSynthesis.getVoices();
@@ -333,111 +330,72 @@
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // Helper: Select gentle female English voice
     function getGentleFemaleVoice() {
       if (!speechVoices || speechVoices.length === 0) return null;
-      
-      // Preferred iOS/iPadOS and Web female voice names
-      var femaleNames = [
-        "Samantha", "Karen", "Moira", "Tessa", "Victoria", 
-        "Fiona", "Siri Female", "Google UK English Female", "Google US English"
-      ];
-
-      // 1. Search for known high-quality female voices
+      var femaleNames = ["Samantha", "Karen", "Moira", "Tessa", "Victoria", "Fiona", "Siri"];
       for (var i = 0; i < femaleNames.length; i++) {
         var match = speechVoices.find(function(v) {
           return v.name.indexOf(femaleNames[i]) !== -1;
         });
         if (match) return match;
       }
-
-      // 2. Fallback: Any English voice marked female
-      var fallbackEnglishFemale = speechVoices.find(function(v) {
-        return v.lang.indexOf('en') === 0 && (v.name.toLowerCase().indexOf('female') !== -1 || v.name.toLowerCase().indexOf('woman') !== -1);
-      });
-      if (fallbackEnglishFemale) return fallbackEnglishFemale;
-
-      // 3. General English fallback
       return speechVoices.find(function(v) {
         return v.lang.indexOf('en') === 0;
       });
     }
 
-    function unlockAllAudio() {
-      if (isAudioUnlocked) return;
-      isAudioUnlocked = true;
-
-      // Unlock Web Audio Context
+    // iPad Touch Audio Activation
+    function primeAudio() {
       try {
-        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass && !audioCtx) {
-          audioCtx = new AudioContextClass();
+        if (!audioCtx) {
+          var AudioClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioClass) audioCtx = new AudioClass();
         }
         if (audioCtx && audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
-      } catch (e) {}
-
-      // Unlock Speech Synthesis with a silent invocation
-      try {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.resume();
-          var silent = new SpeechSynthesisUtterance(' ');
-          silent.volume = 0.01;
-          window.speechSynthesis.speak(silent);
         }
       } catch (e) {}
     }
 
-    // Attach unlocker to first touch on the screen
-    document.addEventListener('touchstart', unlockAllAudio, { once: true, passive: true });
-    document.addEventListener('click', unlockAllAudio, { once: true });
+    document.addEventListener('touchstart', primeAudio, { passive: true });
+    document.addEventListener('click', primeAudio);
 
     function speakPhrase(text) {
       if (!('speechSynthesis' in window)) return;
       try {
+        primeAudio();
         window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
 
         var utterance = new SpeechSynthesisUtterance(text);
-        
-        // Gentle feminine voice parameters:
-        utterance.rate = 0.90;   // Slightly slower, clear cadence for toddlers
-        utterance.pitch = 1.15;  // Friendly, gentle higher pitch
+        utterance.rate = 0.90;
+        utterance.pitch = 1.15;
         utterance.lang = 'en-US';
 
-        var gentleVoice = getGentleFemaleVoice();
-        if (gentleVoice) {
-          utterance.voice = gentleVoice;
-        }
+        var voice = getGentleFemaleVoice();
+        if (voice) utterance.voice = voice;
 
-        // Keep reference alive in store
-        speechUtteranceStore.push(utterance);
+        speechUtterances.push(utterance);
         utterance.onend = function() {
-          var idx = speechUtteranceStore.indexOf(utterance);
-          if (idx > -1) speechUtteranceStore.splice(idx, 1);
+          var idx = speechUtterances.indexOf(utterance);
+          if (idx > -1) speechUtterances.splice(idx, 1);
         };
 
         window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn('Speech error:', err);
-      }
+      } catch (err) {}
     }
 
-    // Recipient selection announcement
+    // Event listener for dropdown selection
     recipientSelect.addEventListener('change', function() {
       speakPhrase("To " + recipientSelect.value);
     });
 
     // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      if (!audioCtx) {
-        var AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) audioCtx = new AudioContextClass();
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      primeAudio();
       if (!audioCtx) return;
 
       try {
@@ -487,13 +445,11 @@
       for (var i = 0; i < 50; i++) {
         var piece = document.createElement('div');
         piece.className = 'confetti-piece';
-        
         piece.style.left = (Math.random() * 80 + 10) + '%';
         piece.style.top = (Math.random() * 20 + 35) + '%';
         
         var dx = (Math.random() * 400 - 150) + 'px';
         piece.style.setProperty('--dx', dx);
-        
         piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
         var size = (Math.random() * 8 + 10) + 'px';
         piece.style.width = size;
@@ -539,10 +495,10 @@
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // Gentle female voice confirmation
+      // Speak confirmation in gentle female voice
       speakPhrase("Email sent to " + recipientName + "!");
 
-      // Reset email card after flight
+      // Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
