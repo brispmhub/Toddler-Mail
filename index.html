@@ -311,40 +311,15 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var speechUtterances = []; // Prevents iOS garbage collection
+    var activeUtterance = null; // Stored globally to prevent garbage collection
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Robust Speech Synthesis for iOS WebKit ---
-    function getGentleFemaleVoice() {
-      if (!('speechSynthesis' in window)) return null;
-      var voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) return null;
-
-      var preferredNames = ["Samantha", "Karen", "Moira", "Tessa", "Victoria", "Fiona", "Siri"];
-      for (var i = 0; i < preferredNames.length; i++) {
-        var match = voices.find(function(v) {
-          return v.name.indexOf(preferredNames[i]) !== -1;
-        });
-        if (match) return match;
-      }
-      return voices.find(function(v) { return v.lang && v.lang.indexOf('en') === 0; });
-    }
-
-    function initSpeech() {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.getVoices();
-      }
-    }
-    if ('speechSynthesis' in window) {
-      initSpeech();
-      window.speechSynthesis.onvoiceschanged = initSpeech;
-    }
-
+    // --- 2. Direct iPad Speech Synthesis Engine ---
     function primeAudioAndSpeech() {
-      // 1. Prime Web Audio Context
+      // 1. Prime Web Audio
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -355,7 +330,7 @@
         }
       } catch (e) {}
 
-      // 2. Prime SpeechSynthesis
+      // 2. Prime Speech Synthesis
       try {
         if ('speechSynthesis' in window) {
           if (window.speechSynthesis.paused) {
@@ -365,47 +340,32 @@
       } catch (e) {}
     }
 
-    // Attach primer to user touches
     document.addEventListener('touchstart', primeAudioAndSpeech, { passive: true });
     document.addEventListener('click', primeAudioAndSpeech);
 
-    function speakText(text) {
+    // Speak function executed synchronously
+    function speakNow(text) {
       if (!('speechSynthesis' in window)) return;
 
       try {
         primeAudioAndSpeech();
-        window.speechSynthesis.cancel(); // Clear any stalled speech
+        window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
 
-        var utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.90;
-        utterance.pitch = 1.15;
-        utterance.lang = 'en-US';
+        activeUtterance = new SpeechSynthesisUtterance(text);
+        activeUtterance.lang = 'en-US';
+        activeUtterance.rate = 0.90;   // Gentle, clear pace
+        activeUtterance.pitch = 1.20;  // Friendly higher pitch
 
-        var voice = getGentleFemaleVoice();
-        if (voice) {
-          utterance.voice = voice;
-        }
-
-        speechUtterances.push(utterance);
-        utterance.onend = function() {
-          var idx = speechUtterances.indexOf(utterance);
-          if (idx > -1) speechUtterances.splice(idx, 1);
-        };
-        utterance.onerror = function() {
-          var idx = speechUtterances.indexOf(utterance);
-          if (idx > -1) speechUtterances.splice(idx, 1);
-        };
-
-        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.speak(activeUtterance);
       } catch (err) {
         console.warn('Speech error:', err);
       }
     }
 
-    // Dropdown Change Listener
+    // Dropdown Change Listener: Speaks immediately upon selection
     recipientSelect.addEventListener('change', function() {
-      speakText("To " + recipientSelect.value);
+      speakNow("To " + recipientSelect.value);
     });
 
     // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
@@ -460,8 +420,10 @@
       for (var i = 0; i < 50; i++) {
         var piece = document.createElement('div');
         piece.className = 'confetti-piece';
+        
         piece.style.left = (Math.random() * 80 + 10) + '%';
         piece.style.top = (Math.random() * 20 + 35) + '%';
+        
         var dx = (Math.random() * 400 - 150) + 'px';
         piece.style.setProperty('--dx', dx);
         piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -505,13 +467,15 @@
 
       var recipientName = recipientSelect.value;
 
+      // 1. Speak IMMEDIATELY on button press (Required by iOS Safari gesture rules)
+      speakNow("Email sent to " + recipientName + "!");
+
+      // 2. Play Whoosh & Start Animations
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // Voice confirmation
-      speakText("Email sent to " + recipientName + "!");
-
+      // 3. Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
@@ -557,6 +521,7 @@
       });
     }
 
+    // Bind Keyboard Keys
     var keys = document.querySelectorAll('.key');
     for (var i = 0; i < keys.length; i++) {
       (function(btn) {
@@ -567,6 +532,7 @@
       })(keys[i]);
     }
 
+    // Bind Send Button
     bindAction(document.getElementById('sendBtn'), sendEmail);
   </script>
 </body>
