@@ -88,7 +88,7 @@
       touch-action: manipulation;
     }
 
-    /* Send Button */
+    /* Bright Send Button */
     .send-btn {
       background: #22c55e;
       color: white;
@@ -108,7 +108,7 @@
       background: #16a34a;
     }
 
-    /* Typing Area */
+    /* Typing Display Area */
     .email-content {
       min-height: 110px;
       max-height: 140px;
@@ -124,7 +124,7 @@
       color: #94a3b8;
     }
 
-    /* Flying Envelope State */
+    /* Flying Envelope Animation */
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
@@ -302,7 +302,7 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            reg.update();
+            reg.update(); // Tell browser to check GitHub for updates
           })
           .catch(function() {});
       });
@@ -316,8 +316,8 @@
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Guaranteed Web Audio Initializer ---
-    function ensureAudio() {
+    // --- 2. Audio Engine Primer ---
+    function initAudio() {
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -329,73 +329,32 @@
       } catch (e) {}
     }
 
-    // --- 3. Reliable Voice Synthesizer & Melodic Vocalizer ---
-    // Dual approach: Try clean native speech, backed by a 100% reliable melodic vocal fallback
-    function playVocalCue(recipientName, actionType) {
-      ensureAudio();
-
-      // 1. Attempt Native Speech (Clean, direct call without queue stall)
-      var spokenText = actionType === 'send' 
-        ? "Email sent to " + recipientName + "!"
-        : "To " + recipientName;
-
+    // Direct Speech Synthesizer Function
+    function speakNow(phrase) {
+      if (!('speechSynthesis' in window)) return;
       try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.resume();
-          var utter = new SpeechSynthesisUtterance(spokenText);
-          utter.rate = 0.90;
-          utter.pitch = 1.25;
-          utter.lang = 'en-US';
-          window.speechSynthesis.speak(utter);
-        }
-      } catch (e) {}
+        initAudio();
+        window.speechSynthesis.resume();
 
-      // 2. Play Web Audio Harmonic Chimes (Always audible on iPad!)
-      if (!audioCtx) return;
+        var utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.rate = 0.90;   // Friendly, unhurried cadence
+        utterance.pitch = 1.20;  // Gentle, higher feminine tone
+        utterance.lang = 'en-US';
 
-      try {
-        var now = audioCtx.currentTime;
-
-        if (actionType === 'select') {
-          // Warm two-tone gentle chime (F5 -> A5)
-          [698.46, 880.00].forEach(function(freq, idx) {
-            var osc = audioCtx.createOscillator();
-            var gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
-            gain.gain.setValueAtTime(0.18, now + (idx * 0.1));
-            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.1) + 0.28);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + (idx * 0.1));
-            osc.stop(now + (idx * 0.1) + 0.28);
-          });
-        } else if (actionType === 'send') {
-          // Joyful ascending 4-tone celebration (C5 -> E5 -> G5 -> C6)
-          [523.25, 659.25, 783.99, 1046.50].forEach(function(freq, idx) {
-            var osc = audioCtx.createOscillator();
-            var gain = audioCtx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
-            gain.gain.setValueAtTime(0.22, now + (idx * 0.08));
-            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.35);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(now + (idx * 0.08));
-            osc.stop(now + (idx * 0.08) + 0.35);
-          });
-        }
-      } catch (e) {}
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn('Speech error:', err);
+      }
     }
 
-    // Dropdown change listener
+    // Announce Recipient Selection
     recipientSelect.addEventListener('change', function() {
-      playVocalCue(recipientSelect.value, 'select');
+      speakNow("To " + recipientSelect.value);
     });
 
-    // --- 4. Synthesized Sound Effects (Tap & Whoosh) ---
+    // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      ensureAudio();
+      initAudio();
       if (!audioCtx) return;
 
       try {
@@ -433,10 +392,10 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (e) {}
+      } catch (err) {}
     }
 
-    // --- 5. Upward Confetti Generator ---
+    // --- 4. Upward Confetti Generator ---
     function triggerUpwardConfetti() {
       var container = document.getElementById('confettiLayer');
       var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -459,7 +418,7 @@
       setTimeout(function() { container.innerHTML = ''; }, 1500);
     }
 
-    // --- 6. Screen Actions & Send Logic ---
+    // --- 5. Screen Actions & Send Logic ---
     function updateDisplay() {
       if (currentText.length === 0) {
         emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
@@ -483,10 +442,10 @@
 
       var recipientName = recipientSelect.value;
 
-      // 1. Play Vocal Confirmation + Chime Immediately
-      playVocalCue(recipientName, 'send');
+      // 1. Speak IMMEDIATELY on the direct touch event
+      speakNow("Email sent to " + recipientName + "!");
 
-      // 2. Play Whoosh & Confetti
+      // 2. Sound and Visuals
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
@@ -504,7 +463,7 @@
       }, 850);
     }
 
-    // --- 7. Fast Touch Event Binding ---
+    // --- 6. Gesture & Interaction Bindings ---
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
     }, { passive: false });
