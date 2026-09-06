@@ -88,7 +88,7 @@
       touch-action: manipulation;
     }
 
-    /* Bright Send Button */
+    /* Send Button */
     .send-btn {
       background: #22c55e;
       color: white;
@@ -300,9 +300,9 @@
     // --- 1. Service Worker Registration ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('./sw.js?v=17')
           .then(function(reg) {
-            reg.update(); // Tell browser to check GitHub for updates
+            reg.update();
           })
           .catch(function() {});
       });
@@ -311,13 +311,18 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
+    var isEngineUnlocked = false;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Audio Engine Primer ---
-    function initAudio() {
+    // --- 2. Silent Global Speech & Audio Unlocker ---
+    function unlockSpeechAndAudio() {
+      if (isEngineUnlocked) return;
+      isEngineUnlocked = true;
+
+      // 1. Wake AudioContext
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -327,34 +332,46 @@
           audioCtx.resume();
         }
       } catch (e) {}
+
+      // 2. Wake WebKit Speech Engine with an imperceptible utterance
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+          var silent = new SpeechSynthesisUtterance('');
+          silent.volume = 0;
+          window.speechSynthesis.speak(silent);
+        }
+      } catch (e) {}
     }
 
-    // Direct Speech Synthesizer Function
-    function speakNow(phrase) {
+    // Attach unlocker to first touch anywhere on the screen
+    window.addEventListener('touchstart', unlockSpeechAndAudio, { once: true, passive: true });
+    window.addEventListener('click', unlockSpeechAndAudio, { once: true });
+
+    // Robust Speech Dispatcher (No cancel() call to avoid WebKit cancellation)
+    function speakDirect(phrase) {
       if (!('speechSynthesis' in window)) return;
       try {
-        initAudio();
+        unlockSpeechAndAudio();
         window.speechSynthesis.resume();
 
         var utterance = new SpeechSynthesisUtterance(phrase);
-        utterance.rate = 0.90;   // Friendly, unhurried cadence
-        utterance.pitch = 1.20;  // Gentle, higher feminine tone
+        utterance.rate = 0.90;   // Gentle, unhurried cadence
+        utterance.pitch = 1.20;  // Friendly higher feminine pitch
         utterance.lang = 'en-US';
 
         window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        console.warn('Speech error:', err);
-      }
+      } catch (err) {}
     }
 
-    // Announce Recipient Selection
+    // Announce recipient changes
     recipientSelect.addEventListener('change', function() {
-      speakNow("To " + recipientSelect.value);
+      speakDirect("To " + recipientSelect.value);
     });
 
     // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      initAudio();
+      unlockSpeechAndAudio();
       if (!audioCtx) return;
 
       try {
@@ -392,7 +409,7 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (err) {}
+      } catch (e) {}
     }
 
     // --- 4. Upward Confetti Generator ---
@@ -442,15 +459,15 @@
 
       var recipientName = recipientSelect.value;
 
-      // 1. Speak IMMEDIATELY on the direct touch event
-      speakNow("Email sent to " + recipientName + "!");
+      // 1. Direct synchronous call - NO cancel() call
+      speakDirect("Email sent to " + recipientName + "!");
 
-      // 2. Sound and Visuals
+      // 2. Play Whoosh & Visuals
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset card after flight
+      // 3. Reset envelope state after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
