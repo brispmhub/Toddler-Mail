@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
-    /* 1. Global Reset & Touch Control */
+    /* 1. Global Touch Controls */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -40,7 +40,7 @@
       position: relative;
     }
 
-    /* 2. Email Compose Window */
+    /* 2. Email Display Window */
     .email-container {
       background: #ffffff;
       border-radius: 20px;
@@ -108,7 +108,7 @@
       background: #16a34a;
     }
 
-    /* Typing Display Area */
+    /* Typing Area */
     .email-content {
       min-height: 110px;
       max-height: 140px;
@@ -124,7 +124,7 @@
       color: #94a3b8;
     }
 
-    /* Flying Envelope Animation */
+    /* Flying Animation */
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
@@ -189,7 +189,7 @@
       color: #64748b;
     }
 
-    /* 4. Upward Confetti Animation */
+    /* 4. Upward Confetti */
     .confetti-layer {
       position: absolute;
       top: 0;
@@ -232,7 +232,6 @@
       <div class="email-header">
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
-          <!-- Reordered Recipient List with Uncle Dadoo -->
           <select class="recipient-select" id="recipientSelect">
             <option value="Gaga">Gaga 👨</option>
             <option value="Mama">Mama 👩</option>
@@ -242,7 +241,6 @@
           </select>
         </div>
 
-        <!-- Send Button -->
         <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
       </div>
 
@@ -300,7 +298,7 @@
     // --- 1. Service Worker Registration ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js?v=17')
+        navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
             reg.update();
           })
@@ -311,18 +309,49 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var isEngineUnlocked = false;
+
+    // Pin active speech to window to prevent iOS garbage collection mid-sentence
+    window.currentSpeech = null;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Silent Global Speech & Audio Unlocker ---
-    function unlockSpeechAndAudio() {
-      if (isEngineUnlocked) return;
-      isEngineUnlocked = true;
+    // --- 2. Reliable iPad Speech Function ---
+    function executeSpeech(text) {
+      if (!('speechSynthesis' in window)) return;
 
-      // 1. Wake AudioContext
+      try {
+        // Ensure the speech synthesis queue is unpaused
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        var utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.90;   // Friendly, unhurried cadence
+        utterance.pitch = 1.20;  // Gentle, feminine tone
+        utterance.lang = 'en-US';
+
+        // Keep a strong reference on window until speech finishes
+        window.currentSpeech = utterance;
+        utterance.onend = function() {
+          window.currentSpeech = null;
+        };
+        utterance.onerror = function() {
+          window.currentSpeech = null;
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {}
+    }
+
+    // Direct listener for the recipient menu
+    recipientSelect.addEventListener('change', function() {
+      executeSpeech("To " + recipientSelect.value);
+    });
+
+    // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
+    function initAudioContext() {
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -332,46 +361,10 @@
           audioCtx.resume();
         }
       } catch (e) {}
-
-      // 2. Wake WebKit Speech Engine with an imperceptible utterance
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.resume();
-          var silent = new SpeechSynthesisUtterance('');
-          silent.volume = 0;
-          window.speechSynthesis.speak(silent);
-        }
-      } catch (e) {}
     }
 
-    // Attach unlocker to first touch anywhere on the screen
-    window.addEventListener('touchstart', unlockSpeechAndAudio, { once: true, passive: true });
-    window.addEventListener('click', unlockSpeechAndAudio, { once: true });
-
-    // Robust Speech Dispatcher (No cancel() call to avoid WebKit cancellation)
-    function speakDirect(phrase) {
-      if (!('speechSynthesis' in window)) return;
-      try {
-        unlockSpeechAndAudio();
-        window.speechSynthesis.resume();
-
-        var utterance = new SpeechSynthesisUtterance(phrase);
-        utterance.rate = 0.90;   // Gentle, unhurried cadence
-        utterance.pitch = 1.20;  // Friendly higher feminine pitch
-        utterance.lang = 'en-US';
-
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {}
-    }
-
-    // Announce recipient changes
-    recipientSelect.addEventListener('change', function() {
-      speakDirect("To " + recipientSelect.value);
-    });
-
-    // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      unlockSpeechAndAudio();
+      initAudioContext();
       if (!audioCtx) return;
 
       try {
@@ -409,7 +402,7 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (e) {}
+      } catch (err) {}
     }
 
     // --- 4. Upward Confetti Generator ---
@@ -459,15 +452,15 @@
 
       var recipientName = recipientSelect.value;
 
-      // 1. Direct synchronous call - NO cancel() call
-      speakDirect("Email sent to " + recipientName + "!");
+      // 1. Speak FIRST synchronously on the user touch event stack
+      executeSpeech("Email sent to " + recipientName + "!");
 
-      // 2. Play Whoosh & Visuals
+      // 2. Trigger Audio & Animation
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset envelope state after flight
+      // 3. Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
@@ -480,7 +473,7 @@
       }, 850);
     }
 
-    // --- 6. Gesture & Interaction Bindings ---
+    // --- 6. Touch Event Binding ---
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
     }, { passive: false });
