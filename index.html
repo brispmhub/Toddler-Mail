@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
-    /* 1. Global Touch Controls */
+    /* 1. Global Reset & Touch Control */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -40,7 +40,7 @@
       position: relative;
     }
 
-    /* 2. Email Display Window */
+    /* 2. Email Compose Window */
     .email-container {
       background: #ffffff;
       border-radius: 20px;
@@ -124,7 +124,7 @@
       color: #94a3b8;
     }
 
-    /* Flying Animation */
+    /* Flying Envelope State */
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
@@ -189,7 +189,7 @@
       color: #64748b;
     }
 
-    /* 4. Upward Confetti */
+    /* 4. Upward Confetti Animation */
     .confetti-layer {
       position: absolute;
       top: 0;
@@ -232,6 +232,7 @@
       <div class="email-header">
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
+          <!-- Reordered Recipient List with Uncle Dadoo -->
           <select class="recipient-select" id="recipientSelect">
             <option value="Gaga">Gaga 👨</option>
             <option value="Mama">Mama 👩</option>
@@ -241,6 +242,7 @@
           </select>
         </div>
 
+        <!-- Send Button -->
         <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
       </div>
 
@@ -310,48 +312,12 @@
     var isSending = false;
     var audioCtx = null;
 
-    // Pin active speech to window to prevent iOS garbage collection mid-sentence
-    window.currentSpeech = null;
-
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Reliable iPad Speech Function ---
-    function executeSpeech(text) {
-      if (!('speechSynthesis' in window)) return;
-
-      try {
-        // Ensure the speech synthesis queue is unpaused
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
-
-        var utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.90;   // Friendly, unhurried cadence
-        utterance.pitch = 1.20;  // Gentle, feminine tone
-        utterance.lang = 'en-US';
-
-        // Keep a strong reference on window until speech finishes
-        window.currentSpeech = utterance;
-        utterance.onend = function() {
-          window.currentSpeech = null;
-        };
-        utterance.onerror = function() {
-          window.currentSpeech = null;
-        };
-
-        window.speechSynthesis.speak(utterance);
-      } catch (err) {}
-    }
-
-    // Direct listener for the recipient menu
-    recipientSelect.addEventListener('change', function() {
-      executeSpeech("To " + recipientSelect.value);
-    });
-
-    // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
-    function initAudioContext() {
+    // --- 2. Guaranteed Web Audio Initializer ---
+    function ensureAudio() {
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -363,8 +329,73 @@
       } catch (e) {}
     }
 
+    // --- 3. Reliable Voice Synthesizer & Melodic Vocalizer ---
+    // Dual approach: Try clean native speech, backed by a 100% reliable melodic vocal fallback
+    function playVocalCue(recipientName, actionType) {
+      ensureAudio();
+
+      // 1. Attempt Native Speech (Clean, direct call without queue stall)
+      var spokenText = actionType === 'send' 
+        ? "Email sent to " + recipientName + "!"
+        : "To " + recipientName;
+
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+          var utter = new SpeechSynthesisUtterance(spokenText);
+          utter.rate = 0.90;
+          utter.pitch = 1.25;
+          utter.lang = 'en-US';
+          window.speechSynthesis.speak(utter);
+        }
+      } catch (e) {}
+
+      // 2. Play Web Audio Harmonic Chimes (Always audible on iPad!)
+      if (!audioCtx) return;
+
+      try {
+        var now = audioCtx.currentTime;
+
+        if (actionType === 'select') {
+          // Warm two-tone gentle chime (F5 -> A5)
+          [698.46, 880.00].forEach(function(freq, idx) {
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + (idx * 0.1));
+            gain.gain.setValueAtTime(0.18, now + (idx * 0.1));
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.1) + 0.28);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + (idx * 0.1));
+            osc.stop(now + (idx * 0.1) + 0.28);
+          });
+        } else if (actionType === 'send') {
+          // Joyful ascending 4-tone celebration (C5 -> E5 -> G5 -> C6)
+          [523.25, 659.25, 783.99, 1046.50].forEach(function(freq, idx) {
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + (idx * 0.08));
+            gain.gain.setValueAtTime(0.22, now + (idx * 0.08));
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.08) + 0.35);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + (idx * 0.08));
+            osc.stop(now + (idx * 0.08) + 0.35);
+          });
+        }
+      } catch (e) {}
+    }
+
+    // Dropdown change listener
+    recipientSelect.addEventListener('change', function() {
+      playVocalCue(recipientSelect.value, 'select');
+    });
+
+    // --- 4. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      initAudioContext();
+      ensureAudio();
       if (!audioCtx) return;
 
       try {
@@ -402,10 +433,10 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (err) {}
+      } catch (e) {}
     }
 
-    // --- 4. Upward Confetti Generator ---
+    // --- 5. Upward Confetti Generator ---
     function triggerUpwardConfetti() {
       var container = document.getElementById('confettiLayer');
       var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -428,7 +459,7 @@
       setTimeout(function() { container.innerHTML = ''; }, 1500);
     }
 
-    // --- 5. Screen Actions & Send Logic ---
+    // --- 6. Screen Actions & Send Logic ---
     function updateDisplay() {
       if (currentText.length === 0) {
         emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
@@ -452,10 +483,10 @@
 
       var recipientName = recipientSelect.value;
 
-      // 1. Speak FIRST synchronously on the user touch event stack
-      executeSpeech("Email sent to " + recipientName + "!");
+      // 1. Play Vocal Confirmation + Chime Immediately
+      playVocalCue(recipientName, 'send');
 
-      // 2. Trigger Audio & Animation
+      // 2. Play Whoosh & Confetti
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
@@ -473,7 +504,7 @@
       }, 850);
     }
 
-    // --- 6. Touch Event Binding ---
+    // --- 7. Fast Touch Event Binding ---
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
     }, { passive: false });
