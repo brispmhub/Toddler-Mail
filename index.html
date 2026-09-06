@@ -88,7 +88,7 @@
       touch-action: manipulation;
     }
 
-    /* Send Button */
+    /* Bright Send Button */
     .send-btn {
       background: #22c55e;
       color: white;
@@ -300,9 +300,9 @@
     // --- 1. Service Worker Registration ---
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js?v=17')
+        navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            reg.update();
+            reg.update(); // Tell browser to check GitHub for updates
           })
           .catch(function() {});
       });
@@ -311,18 +311,13 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var isEngineUnlocked = false;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
 
-    // --- 2. Silent Global Speech & Audio Unlocker ---
-    function unlockSpeechAndAudio() {
-      if (isEngineUnlocked) return;
-      isEngineUnlocked = true;
-
-      // 1. Wake AudioContext
+    // --- 2. Audio Engine Primer ---
+    function initAudio() {
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -332,46 +327,34 @@
           audioCtx.resume();
         }
       } catch (e) {}
-
-      // 2. Wake WebKit Speech Engine with an imperceptible utterance
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.resume();
-          var silent = new SpeechSynthesisUtterance('');
-          silent.volume = 0;
-          window.speechSynthesis.speak(silent);
-        }
-      } catch (e) {}
     }
 
-    // Attach unlocker to first touch anywhere on the screen
-    window.addEventListener('touchstart', unlockSpeechAndAudio, { once: true, passive: true });
-    window.addEventListener('click', unlockSpeechAndAudio, { once: true });
-
-    // Robust Speech Dispatcher (No cancel() call to avoid WebKit cancellation)
-    function speakDirect(phrase) {
+    // Direct Speech Synthesizer Function
+    function speakNow(phrase) {
       if (!('speechSynthesis' in window)) return;
       try {
-        unlockSpeechAndAudio();
+        initAudio();
         window.speechSynthesis.resume();
 
         var utterance = new SpeechSynthesisUtterance(phrase);
-        utterance.rate = 0.90;   // Gentle, unhurried cadence
-        utterance.pitch = 1.20;  // Friendly higher feminine pitch
+        utterance.rate = 0.90;   // Friendly, unhurried cadence
+        utterance.pitch = 1.20;  // Gentle, higher feminine tone
         utterance.lang = 'en-US';
 
         window.speechSynthesis.speak(utterance);
-      } catch (err) {}
+      } catch (err) {
+        console.warn('Speech error:', err);
+      }
     }
 
-    // Announce recipient changes
+    // Announce Recipient Selection
     recipientSelect.addEventListener('change', function() {
-      speakDirect("To " + recipientSelect.value);
+      speakNow("To " + recipientSelect.value);
     });
 
     // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
     function playTone(type) {
-      unlockSpeechAndAudio();
+      initAudio();
       if (!audioCtx) return;
 
       try {
@@ -409,7 +392,7 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (e) {}
+      } catch (err) {}
     }
 
     // --- 4. Upward Confetti Generator ---
@@ -459,15 +442,15 @@
 
       var recipientName = recipientSelect.value;
 
-      // 1. Direct synchronous call - NO cancel() call
-      speakDirect("Email sent to " + recipientName + "!");
+      // 1. Speak IMMEDIATELY on the direct touch event
+      speakNow("Email sent to " + recipientName + "!");
 
-      // 2. Play Whoosh & Visuals
+      // 2. Sound and Visuals
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset envelope state after flight
+      // 3. Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
