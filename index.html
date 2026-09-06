@@ -232,7 +232,7 @@
       <div class="email-header">
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
-          <!-- Reordered Recipient List -->
+          <!-- Reordered Recipient List with Uncle Dadoo -->
           <select class="recipient-select" id="recipientSelect">
             <option value="Gaga">Gaga 👨</option>
             <option value="Mama">Mama 👩</option>
@@ -302,7 +302,7 @@
       window.addEventListener('load', function() {
         navigator.serviceWorker.register('./sw.js')
           .then(function(reg) {
-            reg.update();
+            reg.update(); // Tell browser to check GitHub for updates
           })
           .catch(function() {});
       });
