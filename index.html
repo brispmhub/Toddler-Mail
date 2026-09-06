@@ -9,7 +9,7 @@
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
   <style>
-    /* 1. Global Reset & Touch Control */
+    /* 1. Global Reset & Touch Restrictions */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -110,12 +110,12 @@
 
     /* Typing Display Area */
     .email-content {
-      min-height: 110px;
-      max-height: 140px;
-      font-size: 32px;
+      min-height: 90px;
+      max-height: 120px;
+      font-size: 30px;
       font-weight: 600;
       color: #1e293b;
-      padding-top: 14px;
+      padding-top: 10px;
       overflow-y: auto;
       word-wrap: break-word;
     }
@@ -219,12 +219,47 @@
         transform: translate(var(--dx), -750px) rotate(720deg) scale(0.4);
       }
     }
+
+    /* Debug Bar Styling */
+    .debug-box {
+      text-align: center;
+      margin: 6px 0;
+      z-index: 9999;
+      position: relative;
+    }
+
+    .debug-btn {
+      padding: 10px 24px;
+      background: #f59e0b;
+      color: #ffffff;
+      border: 2px solid #b45309;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      touch-action: auto;
+    }
+
+    .debug-btn:active {
+      background: #d97706;
+    }
+
+    .debug-output {
+      font-size: 15px;
+      color: #b91c1c;
+      margin-top: 6px;
+      font-weight: bold;
+      min-height: 20px;
+      background: rgba(254, 242, 242, 0.9);
+      border-radius: 8px;
+      padding: 4px;
+    }
   </style>
 </head>
 <body>
 
   <div class="app-wrapper" id="appWrapper">
-    <!-- Confetti Explosion Layer -->
+    <!-- Confetti Layer -->
     <div class="confetti-layer" id="confettiLayer"></div>
 
     <!-- Email Compose Card -->
@@ -232,7 +267,6 @@
       <div class="email-header">
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
-          <!-- Reordered Recipient List with Uncle Dadoo -->
           <select class="recipient-select" id="recipientSelect">
             <option value="Gaga">Gaga 👨</option>
             <option value="Mama">Mama 👩</option>
@@ -242,7 +276,6 @@
           </select>
         </div>
 
-        <!-- Bright Send Button -->
         <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
       </div>
 
@@ -251,17 +284,14 @@
       </div>
     </div>
 
-<!-- Temporary Debug Tool -->
-    <div style="text-align: center; margin-bottom: 10px; z-index: 999; position: relative;">
-      <button id="debugBtn" type="button" style="padding: 10px 20px; background: #fbbf24; border: none; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer;">
-        Test iPad Voices
-      </button>
-      <div id="debugText" style="font-size: 16px; color: #dc2626; margin-top: 5px; font-weight: bold;"></div>
+    <!-- DIAGNOSTIC BAR -->
+    <div class="debug-box">
+      <button class="debug-btn" id="debugBtn" type="button">Tap to Test iPad Voices</button>
+      <div class="debug-output" id="debugText">Status: Ready to test</div>
     </div>
 
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Row 1 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -274,7 +304,6 @@
         <button type="button" class="key" data-k="O">O</button>
         <button type="button" class="key" data-k="P">P</button>
       </div>
-      <!-- Row 2 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -286,7 +315,6 @@
         <button type="button" class="key" data-k="K">K</button>
         <button type="button" class="key" data-k="L">L</button>
       </div>
-      <!-- Row 3 -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -297,7 +325,6 @@
         <button type="button" class="key" data-k="M">M</button>
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
-      <!-- Row 4 -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
       </div>
@@ -319,15 +346,15 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var activeUtterance = null; // Stored globally to prevent garbage collection
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
+    var debugBtn = document.getElementById('debugBtn');
+    var debugText = document.getElementById('debugText');
 
-    // --- 2. Direct iPad Speech Synthesis Engine ---
-    function primeAudioAndSpeech() {
-      // 1. Prime Web Audio
+    // --- 2. Robust Audio Context Primer ---
+    function initAudio() {
       try {
         var AudioClass = window.AudioContext || window.webkitAudioContext;
         if (AudioClass && !audioCtx) {
@@ -337,50 +364,81 @@
           audioCtx.resume();
         }
       } catch (e) {}
-
-      // 2. Prime Speech Synthesis
-      try {
-        if ('speechSynthesis' in window) {
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-          }
-        }
-      } catch (e) {}
     }
 
-    document.addEventListener('touchstart', primeAudioAndSpeech, { passive: true });
-    document.addEventListener('click', primeAudioAndSpeech);
-
-    // Speak function executed synchronously
-    function speakNow(text) {
-      if (!('speechSynthesis' in window)) return;
+    // --- 3. DIAGNOSTIC RUNNER FOR IPAD ---
+    function runVoiceDiagnostic() {
+      initAudio();
+      debugText.textContent = "Checking speech engine...";
 
       try {
-        primeAudioAndSpeech();
-        window.speechSynthesis.cancel();
+        if (!('speechSynthesis' in window)) {
+          debugText.textContent = "Error: window.speechSynthesis does not exist on this browser.";
+          return;
+        }
+
         window.speechSynthesis.resume();
+        var voices = window.speechSynthesis.getVoices();
 
-        activeUtterance = new SpeechSynthesisUtterance(text);
-        activeUtterance.lang = 'en-US';
-        activeUtterance.rate = 0.90;   // Gentle, clear pace
-        activeUtterance.pitch = 1.20;  // Friendly higher pitch
+        if (voices.length === 0) {
+          debugText.textContent = "Voices list is 0. Attempting forced speech test anyway...";
+        } else {
+          debugText.textContent = "Voices found: " + voices.length + ". Playing voice test now...";
+        }
 
-        window.speechSynthesis.speak(activeUtterance);
+        var testUtterance = new SpeechSynthesisUtterance("Hello, this is a voice test.");
+        testUtterance.rate = 0.9;
+        testUtterance.pitch = 1.2;
+
+        testUtterance.onstart = function() {
+          debugText.textContent = "Speech started successfully!";
+        };
+        testUtterance.onend = function() {
+          debugText.textContent = "Speech completed successfully!";
+        };
+        testUtterance.onerror = function(event) {
+          debugText.textContent = "Speech error: " + (event.error || "Blocked by device");
+        };
+
+        window.speechSynthesis.speak(testUtterance);
+
       } catch (err) {
-        console.warn('Speech error:', err);
+        debugText.textContent = "Crash error: " + err.message;
       }
     }
 
-    // Dropdown Change Listener: Speaks immediately upon selection
+    // Direct touch listener specifically for the debug button
+    debugBtn.addEventListener('touchstart', function(e) {
+      e.stopPropagation();
+      runVoiceDiagnostic();
+    }, { passive: false });
+    debugBtn.addEventListener('click', runVoiceDiagnostic);
+
+    // --- 4. Main Speech Handler ---
+    function speakText(phrase) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        initAudio();
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+
+        var utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.15;
+        utterance.lang = 'en-US';
+
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    }
+
     recipientSelect.addEventListener('change', function() {
-      speakNow("To " + recipientSelect.value);
+      speakText("To " + recipientSelect.value);
     });
 
-    // --- 3. Synthesized Sound Effects (Tap & Whoosh) ---
+    // --- 5. Sound Effects ---
     function playTone(type) {
-      primeAudioAndSpeech();
+      initAudio();
       if (!audioCtx) return;
-
       try {
         if (type === 'tap') {
           var osc = audioCtx.createOscillator();
@@ -398,9 +456,7 @@
           var bufferSize = audioCtx.sampleRate * 0.5;
           var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
           var data = buffer.getChannelData(0);
-          for (var i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
+          for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
           var noise = audioCtx.createBufferSource();
           noise.buffer = buffer;
           var filter = audioCtx.createBiquadFilter();
@@ -418,20 +474,18 @@
           noise.start();
           noise.stop(audioCtx.currentTime + 0.5);
         }
-      } catch (err) {}
+      } catch (e) {}
     }
 
-    // --- 4. Upward Confetti Generator ---
+    // --- 6. Confetti Generator ---
     function triggerUpwardConfetti() {
       var container = document.getElementById('confettiLayer');
       var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
       for (var i = 0; i < 50; i++) {
         var piece = document.createElement('div');
         piece.className = 'confetti-piece';
-        
         piece.style.left = (Math.random() * 80 + 10) + '%';
         piece.style.top = (Math.random() * 20 + 35) + '%';
-        
         var dx = (Math.random() * 400 - 150) + 'px';
         piece.style.setProperty('--dx', dx);
         piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
@@ -443,12 +497,10 @@
         piece.style.animationDuration = (Math.random() * 0.4 + 0.8) + 's';
         container.appendChild(piece);
       }
-      setTimeout(function() {
-        container.innerHTML = '';
-      }, 1500);
+      setTimeout(function() { container.innerHTML = ''; }, 1500);
     }
 
-    // --- 5. Screen Actions & Send Logic ---
+    // --- 7. Screen & Send Logic ---
     function updateDisplay() {
       if (currentText.length === 0) {
         emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
@@ -461,11 +513,8 @@
     function handleKey(val) {
       if (isSending) return;
       playTone('tap');
-      if (val === 'BACKSPACE') {
-        currentText = currentText.slice(0, -1);
-      } else {
-        currentText += val;
-      }
+      if (val === 'BACKSPACE') currentText = currentText.slice(0, -1);
+      else currentText += val;
       updateDisplay();
     }
 
@@ -474,22 +523,17 @@
       isSending = true;
 
       var recipientName = recipientSelect.value;
+      speakText("Email sent to " + recipientName + "!");
 
-      // 1. Speak IMMEDIATELY on button press (Required by iOS Safari gesture rules)
-      speakNow("Email sent to " + recipientName + "!");
-
-      // 2. Play Whoosh & Start Animations
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset card after flight
       setTimeout(function() {
         currentText = "";
         updateDisplay();
         emailCard.style.transition = 'none';
         emailCard.classList.remove('flying');
-
         setTimeout(function() {
           emailCard.style.transition = '';
           isSending = false;
@@ -497,23 +541,7 @@
       }, 850);
     }
 
-    // --- 6. Touch & Interaction Bindings ---
-    document.addEventListener('dblclick', function(e) {
-      e.preventDefault();
-    }, { passive: false });
-
-    var lastTouchEnd = 0;
-    document.addEventListener('touchend', function(e) {
-      var now = Date.now();
-      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
-        return;
-      }
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, { passive: false });
-
+    // --- 8. Fast Button Binding ---
     function bindAction(element, callback) {
       var touchHandled = false;
       element.addEventListener('touchstart', function(e) {
@@ -522,25 +550,19 @@
         callback();
       }, { passive: false });
       element.addEventListener('click', function(e) {
-        if (!touchHandled) {
-          callback();
-        }
+        if (!touchHandled) callback();
         touchHandled = false;
       });
     }
 
-    // Bind Keyboard Keys
     var keys = document.querySelectorAll('.key');
     for (var i = 0; i < keys.length; i++) {
       (function(btn) {
         var keyVal = btn.getAttribute('data-k');
-        bindAction(btn, function() {
-          handleKey(keyVal);
-        });
+        bindAction(btn, function() { handleKey(keyVal); });
       })(keys[i]);
     }
 
-    // Bind Send Button
     bindAction(document.getElementById('sendBtn'), sendEmail);
   </script>
 </body>
