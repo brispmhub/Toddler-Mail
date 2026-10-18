@@ -190,4 +190,502 @@
     }
 
     @keyframes pulseBtn {
-      0% { transform
+      0% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
+    .voice-unlock-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Flying Envelope */
+    .flying {
+      transform: translate(600px, -800px) scale(0.1) rotate(20deg);
+      opacity: 0;
+    }
+
+    /* 3. Keyboard Container */
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 12px;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      margin-bottom: 4px;
+      touch-action: none;
+      z-index: 10;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .key {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-bottom: 3px solid #94a3b8;
+      border-radius: 8px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #1e293b;
+      height: 50px;
+      flex: 1;
+      max-width: 62px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .key:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      background: #f1f5f9;
+    }
+
+    .key.num-key {
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 21px;
+    }
+
+    .key.punct-key {
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 24px;
+      max-width: 58px;
+    }
+
+    .key.backspace {
+      max-width: 72px;
+      background: #fee2e2;
+      border-color: #fca5a5;
+      border-bottom-color: #f87171;
+      color: #dc2626;
+    }
+
+    .key.return-key {
+      max-width: 90px;
+      background: #dbeafe;
+      border-color: #bfdbfe;
+      border-bottom-color: #93c5fd;
+      color: #1d4ed8;
+      font-size: 20px;
+    }
+
+    .key.space {
+      max-width: 420px;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #64748b;
+    }
+
+    /* 4. Upward Confetti */
+    .confetti-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 999;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      animation: confettiFlyUp 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    }
+
+    @keyframes confettiFlyUp {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), -750px) rotate(720deg) scale(0.4);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper" id="appWrapper">
+    <!-- Confetti Layer -->
+    <div class="confetti-layer" id="confettiLayer"></div>
+
+    <!-- Email Compose Card -->
+    <div class="email-container" id="emailCard">
+      <div class="email-header">
+        <div class="recipient-wrapper">
+          <button class="recipient-button" id="recipientBtn" type="button">
+            To: <span id="recipientName">Gaga 👨</span> <span style="font-size:16px; color:#64748b;">▼</span>
+          </button>
+          
+          <div class="recipient-menu" id="recipientMenu">
+            <button class="recipient-option" type="button" data-name="Gaga" data-label="Gaga 👨">Gaga 👨</button>
+            <button class="recipient-option" type="button" data-name="Mama" data-label="Mama 👩">Mama 👩</button>
+            <button class="recipient-option" type="button" data-name="Grandma" data-label="Grandma 🤶">Grandma 🤶</button>
+            <button class="recipient-option" type="button" data-name="Grandpa" data-label="Grandpa 🎅">Grandpa 🎅</button>
+            <button class="recipient-option" type="button" data-name="Uncle Dadoo" data-label="Uncle Dadoo 🤡">Uncle Dadoo 🤡</button>
+          </div>
+        </div>
+
+        <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
+      </div>
+
+      <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
+    </div>
+
+    <!-- Friendly Voice Activator Button -->
+    <div class="voice-unlock-container" id="voiceUnlockArea">
+      <button class="voice-unlock-btn" id="voiceUnlockBtn" type="button">
+        🔊 Tap to Turn On Voice!
+      </button>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard" id="keyboard">
+      <!-- Numbers 1 ... 0 -->
+      <div class="kb-row">
+        <button type="button" class="key num-key" data-k="1">1</button>
+        <button type="button" class="key num-key" data-k="2">2</button>
+        <button type="button" class="key num-key" data-k="3">3</button>
+        <button type="button" class="key num-key" data-k="4">4</button>
+        <button type="button" class="key num-key" data-k="5">5</button>
+        <button type="button" class="key num-key" data-k="6">6</button>
+        <button type="button" class="key num-key" data-k="7">7</button>
+        <button type="button" class="key num-key" data-k="8">8</button>
+        <button type="button" class="key num-key" data-k="9">9</button>
+        <button type="button" class="key num-key" data-k="0">0</button>
+      </div>
+
+      <!-- Letters Q - P -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Q">Q</button>
+        <button type="button" class="key" data-k="W">W</button>
+        <button type="button" class="key" data-k="E">E</button>
+        <button type="button" class="key" data-k="R">R</button>
+        <button type="button" class="key" data-k="T">T</button>
+        <button type="button" class="key" data-k="Y">Y</button>
+        <button type="button" class="key" data-k="U">U</button>
+        <button type="button" class="key" data-k="I">I</button>
+        <button type="button" class="key" data-k="O">O</button>
+        <button type="button" class="key" data-k="P">P</button>
+      </div>
+
+      <!-- Letters A - L -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="A">A</button>
+        <button type="button" class="key" data-k="S">S</button>
+        <button type="button" class="key" data-k="D">D</button>
+        <button type="button" class="key" data-k="F">F</button>
+        <button type="button" class="key" data-k="G">G</button>
+        <button type="button" class="key" data-k="H">H</button>
+        <button type="button" class="key" data-k="J">J</button>
+        <button type="button" class="key" data-k="K">K</button>
+        <button type="button" class="key" data-k="L">L</button>
+      </div>
+
+      <!-- Letters Z - M, Punctuation , . and Backspace -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Z">Z</button>
+        <button type="button" class="key" data-k="X">X</button>
+        <button type="button" class="key" data-k="C">C</button>
+        <button type="button" class="key" data-k="V">V</button>
+        <button type="button" class="key" data-k="B">B</button>
+        <button type="button" class="key" data-k="N">N</button>
+        <button type="button" class="key" data-k="M">M</button>
+        <button type="button" class="key punct-key" data-k=",">,</button>
+        <button type="button" class="key punct-key" data-k=".">.</button>
+        <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
+      </div>
+
+      <!-- Space Bar & Return Key -->
+      <div class="kb-row">
+        <button type="button" class="key space" data-k=" ">SPACE</button>
+        <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(reg) {
+            reg.update();
+          })
+          .catch(function() {});
+      });
+    }
+
+    var currentText = "";
+    var isSending = false;
+    var audioCtx = null;
+    var selectedRecipient = "Gaga";
+    window.activeUtterance = null;
+
+    var recipientBtn = document.getElementById('recipientBtn');
+    var recipientMenu = document.getElementById('recipientMenu');
+    var recipientNameSpan = document.getElementById('recipientName');
+    var emailContent = document.getElementById('emailContent');
+    var emailCard = document.getElementById('emailCard');
+    var voiceUnlockArea = document.getElementById('voiceUnlockArea');
+    var voiceUnlockBtn = document.getElementById('voiceUnlockBtn');
+
+    // --- 2. Guaranteed Audio & Speech Primer ---
+    function ensureAudio() {
+      try {
+        var AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass && !audioCtx) {
+          audioCtx = new AudioClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {}
+    }
+
+    function speakText(phrase) {
+      if (!('speechSynthesis' in window)) return;
+
+      try {
+        ensureAudio();
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        var utter = new SpeechSynthesisUtterance(phrase);
+        utter.rate = 0.90;
+        utter.pitch = 1.20;
+        utter.lang = 'en-US';
+
+        window.activeUtterance = utter;
+        utter.onend = function() { window.activeUtterance = null; };
+        utter.onerror = function() { window.activeUtterance = null; };
+
+        window.speechSynthesis.speak(utter);
+      } catch (err) {}
+    }
+
+    // Explicit Voice Activator Button Tap
+    bindAction(voiceUnlockBtn, function() {
+      ensureAudio();
+      speakText("Voice is ready!");
+      // Hide button once tapped so UI is clean
+      voiceUnlockArea.style.display = 'none';
+    });
+
+    // --- 3. Recipient Selector Interaction ---
+    function toggleRecipientMenu() {
+      if (recipientMenu.classList.contains('open')) {
+        recipientMenu.classList.remove('open');
+      } else {
+        recipientMenu.classList.add('open');
+      }
+    }
+
+    function selectRecipient(name, label) {
+      selectedRecipient = name;
+      recipientNameSpan.textContent = label;
+      recipientMenu.classList.remove('open');
+      speakText("To " + name);
+    }
+
+    bindAction(recipientBtn, toggleRecipientMenu);
+
+    var optionBtns = document.querySelectorAll('.recipient-option');
+    for (var j = 0; j < optionBtns.length; j++) {
+      (function(opt) {
+        var rName = opt.getAttribute('data-name');
+        var rLabel = opt.getAttribute('data-label');
+        bindAction(opt, function() {
+          selectRecipient(rName, rLabel);
+        });
+      })(optionBtns[j]);
+    }
+
+    // --- 4. Synthesized Sound Effects (Tap, Return, Whoosh) ---
+    function playTone(type) {
+      ensureAudio();
+      if (!audioCtx) return;
+
+      try {
+        if (type === 'tap') {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'return') {
+          var oscR = audioCtx.createOscillator();
+          var gainR = audioCtx.createGain();
+          oscR.type = 'sine';
+          oscR.frequency.setValueAtTime(320, audioCtx.currentTime);
+          oscR.frequency.exponentialRampToValueAtTime(540, audioCtx.currentTime + 0.08);
+          gainR.gain.setValueAtTime(0.18, audioCtx.currentTime);
+          gainR.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+          oscR.connect(gainR);
+          gainR.connect(audioCtx.destination);
+          oscR.start();
+          oscR.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'whoosh') {
+          var bufferSize = audioCtx.sampleRate * 0.45;
+          var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          var data = buffer.getChannelData(0);
+          for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          var noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+          var filter = audioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(250, audioCtx.currentTime);
+          filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+          filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
+          var gainWhoosh = audioCtx.createGain();
+          gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
+          gainWhoosh.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
+          gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+          noise.connect(filter);
+          filter.connect(gainWhoosh);
+          gainWhoosh.connect(audioCtx.destination);
+          noise.start();
+          noise.stop(audioCtx.currentTime + 0.45);
+        }
+      } catch (e) {}
+    }
+
+    // --- 5. Upward Confetti ---
+    function triggerUpwardConfetti() {
+      var container = document.getElementById('confettiLayer');
+      var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+      for (var i = 0; i < 50; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = (Math.random() * 80 + 10) + '%';
+        piece.style.top = (Math.random() * 20 + 35) + '%';
+        var dx = (Math.random() * 400 - 150) + 'px';
+        piece.style.setProperty('--dx', dx);
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        var size = (Math.random() * 8 + 10) + 'px';
+        piece.style.width = size;
+        piece.style.height = size;
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        piece.style.animationDelay = (Math.random() * 0.2) + 's';
+        piece.style.animationDuration = (Math.random() * 0.4 + 0.8) + 's';
+        container.appendChild(piece);
+      }
+      setTimeout(function() { container.innerHTML = ''; }, 1500);
+    }
+
+    // --- 6. Screen Actions & Send Logic ---
+    function updateDisplay() {
+      if (currentText.length === 0) {
+        emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
+      } else {
+        emailContent.textContent = currentText;
+      }
+      emailContent.scrollTop = emailContent.scrollHeight;
+    }
+
+    function handleKey(val) {
+      if (isSending) return;
+      if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
+
+      if (val === 'BACKSPACE') {
+        playTone('tap');
+        currentText = currentText.slice(0, -1);
+      } else if (val === 'RETURN') {
+        playTone('return');
+        currentText += "\n";
+      } else {
+        playTone('tap');
+        currentText += val;
+      }
+      updateDisplay();
+    }
+
+    function sendEmail() {
+      if (isSending) return;
+      isSending = true;
+      if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
+
+      speakText("Email sent to " + selectedRecipient + "!");
+
+      playTone('whoosh');
+      triggerUpwardConfetti();
+      emailCard.classList.add('flying');
+
+      setTimeout(function() {
+        currentText = "";
+        updateDisplay();
+        emailCard.style.transition = 'none';
+        emailCard.classList.remove('flying');
+        setTimeout(function() {
+          emailCard.style.transition = '';
+          isSending = false;
+        }, 50);
+      }, 850);
+    }
+
+    // --- 7. Fast Gesture & Touch Binding ---
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+        return;
+      }
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    function bindAction(element, callback) {
+      var touchHandled = false;
+      element.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        touchHandled = true;
+        callback();
+      }, { passive: false });
+      element.addEventListener('click', function(e) {
+        if (!touchHandled) callback();
+        touchHandled = false;
+      });
+    }
+
+    // Bind Keyboard Keys
+    var keys = document.querySelectorAll('.key');
+    for (var i = 0; i < keys.length; i++) {
+      (function(btn) {
+        var keyVal = btn.getAttribute('data-k');
+        bindAction(btn, function() { handleKey(keyVal); });
+      })(keys[i]);
+    }
+
+    // Bind Send Button
+    bindAction(document.getElementById('sendBtn'), sendEmail);
+  </script>
+</body>
+</html>
