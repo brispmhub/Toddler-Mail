@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Toddler Mail">
+  <link rel="manifest" href="./manifest.json">
+  <title>Toddler Mail</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      background: linear-gradient(135deg, #e0f2fe, #f0fdf4);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      height: 100%;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .email-container {
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 10px 14px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease;
+      flex-shrink: 0;
+      z-index: 20;
+      position: relative;
+    }
+
+    .email-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 8px;
+      gap: 10px;
+    }
+
+    .recipient-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .to-label {
+      font-size: 22px;
+      font-weight: 700;
+      color: #64748b;
+    }
+
+    .recipient-select {
+      font-size: 20px;
+      font-weight: bold;
+      color: #2563eb;
+      background: #eff6ff;
+      border: 2px solid #93c5fd;
+      border-radius: 10px;
+      padding: 6px 12px;
+      outline: none;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .send-btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 35px;
+      padding: 8px 22px;
+      font-size: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+      touch-action: none;
+      flex-shrink: 0;
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+      background: #16a34a;
+    }
+
+    .email-content {
+      min-height: 75px;
+      max-height: 105px;
+      font-size: 26px;
+      line-height: 1.3;
+      font-weight: 600;
+      color: #1e293b;
+      padding-top: 8px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .placeholder {
+      color: #94a3b8;
+    }
+
+    .flying {
+      transform: translate(600px, -800px) scale(0.1) rotate(20deg);
+      opacity: 0;
+    }
+
+    .keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      margin-bottom: 2px;
+      touch-action: none;
+      z-index: 10;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .key {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-bottom: 3px solid #94a3b8;
+      border-radius: 8px;
+      font-size: 21px;
+      font-weight: bold;
+      color: #1e293b;
+      height: 48px;
+      flex: 1;
+      max-width: 60px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+    }
+
+    .key:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      background: #f1f5f9;
+    }
+
+    .key.num-key {
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 20px;
+    }
+
+    .key.punct-key {
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 22px;
+      max-width: 55px;
+    }
+
+    .key.backspace {
+      max-width: 68px;
+      background: #fee2e2;
+      border-color: #fca5a5;
+      border-bottom-color: #f87171;
+      color: #dc2626;
+    }
+
+    .key.return-key {
+      max-width: 90px;
+      background: #dbeafe;
+      border-color: #bfdbfe;
+      border-bottom-color: #93c5fd;
+      color: #1d4ed8;
+      font-size: 18px;
+    }
+
+    .key.space {
+      max-width: 420px;
+      font-size: 15px;
+      letter-spacing: 2px;
+      color: #64748b;
+    }
+
+    .confetti-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 999;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      animation: confettiFlyUp 1.2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+    }
+
+    @keyframes confettiFlyUp {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), -750px) rotate(720deg) scale(0.4);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper" id="appWrapper">
+    <div class="confetti-layer" id="confettiLayer"></div>
+
+    <div class="email-container" id="emailCard">
+      <div class="email-header">
+        <div class="recipient-wrapper">
+          <span class="to-label">To:</span>
+          <select class="recipient-select" id="recipientSelect">
+            <option value="Gaga">Gaga 👨</option>
+            <option value="Mama">Mama 👩</option>
+            <option value="Grandma">Grandma 🤶</option>
+            <option value="Grandpa">Grandpa 🎅</option>
+            <option value="Uncle Dadoo">Uncle Dadoo 🤡</option>
+          </select>
+        </div>
+
+        <button class="send-btn" id="sendBtn" type="button">SEND 🚀</button>
+      </div>
+
+      <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
+    </div>
+
+    <!-- Keyboard -->
+    <div class="keyboard" id="keyboard">
+      <!-- Row 1: Numbers -->
+      <div class="kb-row">
+        <button type="button" class="key num-key" data-k="1">1</button>
+        <button type="button" class="key num-key" data-k="2">2</button>
+        <button type="button" class="key num-key" data-k="3">3</button>
+        <button type="button" class="key num-key" data-k="4">4</button>
+        <button type="button" class="key num-key" data-k="5">5</button>
+        <button type="button" class="key num-key" data-k="6">6</button>
+        <button type="button" class="key num-key" data-k="7">7</button>
+        <button type="button" class="key num-key" data-k="8">8</button>
+        <button type="button" class="key num-key" data-k="9">9</button>
+        <button type="button" class="key num-key" data-k="0">0</button>
+      </div>
+
+      <!-- Row 2: Letters Q - P -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Q">Q</button>
+        <button type="button" class="key" data-k="W">W</button>
+        <button type="button" class="key" data-k="E">E</button>
+        <button type="button" class="key" data-k="R">R</button>
+        <button type="button" class="key" data-k="T">T</button>
+        <button type="button" class="key" data-k="Y">Y</button>
+        <button type="button" class="key" data-k="U">U</button>
+        <button type="button" class="key" data-k="I">I</button>
+        <button type="button" class="key" data-k="O">O</button>
+        <button type="button" class="key" data-k="P">P</button>
+      </div>
+
+      <!-- Row 3: Letters A - L -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="A">A</button>
+        <button type="button" class="key" data-k="S">S</button>
+        <button type="button" class="key" data-k="D">D</button>
+        <button type="button" class="key" data-k="F">F</button>
+        <button type="button" class="key" data-k="G">G</button>
+        <button type="button" class="key" data-k="H">H</button>
+        <button type="button" class="key" data-k="J">J</button>
+        <button type="button" class="key" data-k="K">K</button>
+        <button type="button" class="key" data-k="L">L</button>
+      </div>
+
+      <!-- Row 4: Letters Z - M, Punctuation, Backspace -->
+      <div class="kb-row">
+        <button type="button" class="key" data-k="Z">Z</button>
+        <button type="button" class="key" data-k="X">X</button>
+        <button type="button" class="key" data-k="C">C</button>
+        <button type="button" class="key" data-k="V">V</button>
+        <button type="button" class="key" data-k="B">B</button>
+        <button type="button" class="key" data-k="N">N</button>
+        <button type="button" class="key" data-k="M">M</button>
+        <button type="button" class="key punct-key" data-k=",">,</button>
+        <button type="button" class="key punct-key" data-k=".">.</button>
+        <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
+      </div>
+
+      <!-- Row 5: Space & Return -->
+      <div class="kb-row">
+        <button type="button" class="key space" data-k=" ">SPACE</button>
+        <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function(reg) { reg.update(); })
+          .catch(function() {});
+      });
+    }
+
+    var currentText = "";
+    var isSending = false;
+    var audioCtx = null;
+
+    var recipientSelect = document.getElementById('recipientSelect');
+    var emailContent = document.getElementById('emailContent');
+    var emailCard = document.getElementById('emailCard');
+
+    function ensureAudio() {
+      try {
+        var AudioClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioClass && !audioCtx) {
+          audioCtx = new AudioClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      } catch (e) {}
+    }
+
+    // --- Direct Web-Audio Synthesized Speech Engine ---
+    // Generates human vowel phonemes directly through the working AudioContext
+    function playPhoneme(f0, formants, startTime, duration) {
+      if (!audioCtx) return;
+
+      var osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f0, startTime);
+
+      var masterGain = audioCtx.createGain();
+      masterGain.gain.setValueAtTime(0.0001, startTime);
+      masterGain.gain.linearRampToValueAtTime(0.28, startTime + 0.02);
+      masterGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      masterGain.connect(audioCtx.destination);
+
+      formants.forEach(function(band) {
+        var filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(band[0], startTime);
+        filter.Q.setValueAtTime(band[1] || 5.0, startTime);
+        osc.connect(filter);
+        filter.connect(masterGain);
+      });
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function speakSpokenPhrase(phraseType, target) {
+      ensureAudio();
+      if (!audioCtx) return;
+
+      var t = audioCtx.currentTime;
+
+      if (phraseType === 'to') {
+        // "To" ([t] burst + [u] vowel: F1=300Hz, F2=870Hz)
+        playPhoneme(260, [[300, 5], [870, 6]], t, 0.16);
+
+        var nameStart = t + 0.19;
+        if (target === 'Gaga') {
+          // "Ga-ga"
+          playPhoneme(290, [[700, 5], [1220, 5]], nameStart, 0.15);
+          playPhoneme(250, [[700, 5], [1220, 5]], nameStart + 0.18, 0.20);
+        } else if (target === 'Mama') {
+          // "Ma-ma"
+          playPhoneme(310, [[750, 5], [1150, 5]], nameStart, 0.15);
+          playPhoneme(270, [[750, 5], [1150, 5]], nameStart + 0.18, 0.20);
+        } else if (target === 'Grandma') {
+          // "Grand-ma"
+          playPhoneme(280, [[600, 5], [1100, 5]], nameStart, 0.17);
+          playPhoneme(300, [[750, 5], [1150, 5]], nameStart + 0.19, 0.22);
+        } else if (target === 'Grandpa') {
+          // "Grand-pa"
+          playPhoneme(280, [[600, 5], [1100, 5]], nameStart, 0.17);
+          playPhoneme(310, [[700, 5], [1100, 5]], nameStart + 0.19, 0.22);
+        } else if (target === 'Uncle Dadoo') {
+          // "Un-cle Da-doo"
+          playPhoneme(290, [[500, 5], [1000, 5]], nameStart, 0.13);
+          playPhoneme(260, [[450, 5], [950, 5]],  nameStart + 0.15, 0.13);
+          playPhoneme(320, [[700, 5], [1220, 5]], nameStart + 0.30, 0.15);
+          playPhoneme(350, [[300, 5], [870, 5]],  nameStart + 0.47, 0.22);
+        }
+      } else if (phraseType === 'sent') {
+        // "E-mail sent"
+        playPhoneme(320, [[300, 6], [2200, 6]], t, 0.14);
+        playPhoneme(280, [[500, 5], [1500, 5]], t + 0.15, 0.18);
+        playPhoneme(290, [[400, 5], [1800, 5]], t + 0.35, 0.18);
+
+        // Followed by "To [Name]"
+        var toStart = t + 0.58;
+        playPhoneme(260, [[300, 5], [870, 6]], toStart, 0.16);
+
+        var nameStart2 = toStart + 0.19;
+        if (target === 'Gaga') {
+          playPhoneme(290, [[700, 5], [1220, 5]], nameStart2, 0.15);
+          playPhoneme(250, [[700, 5], [1220, 5]], nameStart2 + 0.18, 0.20);
+        } else if (target === 'Mama') {
+          playPhoneme(310, [[750, 5], [1150, 5]], nameStart2, 0.15);
+          playPhoneme(270, [[750, 5], [1150, 5]], nameStart2 + 0.18, 0.20);
+        } else if (target === 'Grandma') {
+          playPhoneme(280, [[600, 5], [1100, 5]], nameStart2, 0.17);
+          playPhoneme(300, [[750, 5], [1150, 5]], nameStart2 + 0.19, 0.22);
+        } else if (target === 'Grandpa') {
+          playPhoneme(280, [[600, 5], [1100, 5]], nameStart2, 0.17);
+          playPhoneme(310, [[700, 5], [1100, 5]], nameStart2 + 0.19, 0.22);
+        } else if (target === 'Uncle Dadoo') {
+          playPhoneme(290, [[500, 5], [1000, 5]], nameStart2, 0.13);
+          playPhoneme(260, [[450, 5], [950, 5]],  nameStart2 + 0.15, 0.13);
+          playPhoneme(320, [[700, 5], [1220, 5]], nameStart2 + 0.30, 0.15);
+          playPhoneme(350, [[300, 5], [870, 5]],  nameStart2 + 0.47, 0.22);
+        }
+      }
+    }
+
+    recipientSelect.addEventListener('change', function() {
+      ensureAudio();
+      speakSpokenPhrase('to', recipientSelect.value);
+    });
+
+    function playTone(type) {
+      ensureAudio();
+      if (!audioCtx) return;
+
+      try {
+        if (type === 'tap') {
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        } else if (type === 'return') {
+          var oscR = audioCtx.createOscillator();
+          var gainR = audioCtx.createGain();
+          oscR.type = 'sine';
+          oscR.frequency.setValueAtTime(320, audioCtx.currentTime);
+          oscR.frequency.exponentialRampToValueAtTime(540, audioCtx.currentTime + 0.08);
+          gainR.gain.setValueAtTime(0.18, audioCtx.currentTime);
+          gainR.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+          oscR.connect(gainR);
+          gainR.connect(audioCtx.destination);
+          oscR.start();
+          oscR.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'whoosh') {
+          var bufferSize = audioCtx.sampleRate * 0.45;
+          var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          var data = buffer.getChannelData(0);
+          for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          var noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+          var filter = audioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(250, audioCtx.currentTime);
+          filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+          filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
+          var gainWhoosh = audioCtx.createGain();
+          gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
+          gainWhoosh.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.15);
+          gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+          noise.connect(filter);
+          filter.connect(gainWhoosh);
+          gainWhoosh.connect(audioCtx.destination);
+          noise.start();
+          noise.stop(audioCtx.currentTime + 0.45);
+        }
+      } catch (e) {}
+    }
+
+    function triggerUpwardConfetti() {
+      var container = document.getElementById('confettiLayer');
+      var colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+      for (var i = 0; i < 50; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = (Math.random() * 80 + 10) + '%';
+        piece.style.top = (Math.random() * 20 + 35) + '%';
+        var dx = (Math.random() * 400 - 150) + 'px';
+        piece.style.setProperty('--dx', dx);
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        var size = (Math.random() * 8 + 10) + 'px';
+        piece.style.width = size;
+        piece.style.height = size;
+        if (Math.random() > 0.5) piece.style.borderRadius = '50%';
+        piece.style.animationDelay = (Math.random() * 0.2) + 's';
+        piece.style.animationDuration = (Math.random() * 0.4 + 0.8) + 's';
+        container.appendChild(piece);
+      }
+      setTimeout(function() { container.innerHTML = ''; }, 1500);
+    }
+
+    function updateDisplay() {
+      if (currentText.length === 0) {
+        emailContent.innerHTML = '<span class="placeholder">Tap keys to write...</span>';
+      } else {
+        emailContent.textContent = currentText;
+      }
+      emailContent.scrollTop = emailContent.scrollHeight;
+    }
+
+    function handleKey(val) {
+      if (isSending) return;
+
+      if (val === 'BACKSPACE') {
+        playTone('tap');
+        currentText = currentText.slice(0, -1);
+      } else if (val === 'RETURN') {
+        playTone('return');
+        currentText += "\n";
+      } else {
+        playTone('tap');
+        currentText += val;
+      }
+      updateDisplay();
+    }
+
+    function sendEmail() {
+      if (isSending) return;
+      isSending = true;
+
+      // 1. Spoken voice announcement through AudioContext
+      speakSpokenPhrase('sent', recipientSelect.value);
+
+      // 2. Whoosh sound & confetti
+      playTone('whoosh');
+      triggerUpwardConfetti();
+      emailCard.classList.add('flying');
+
+      // 3. Reset card
+      setTimeout(function() {
+        currentText = "";
+        updateDisplay();
+        emailCard.style.transition = 'none';
+        emailCard.classList.remove('flying');
+        setTimeout(function() {
+          emailCard.style.transition = '';
+          isSending = false;
+        }, 50);
+      }, 850);
+    }
+
+    document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
+
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+        return;
+      }
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    function bindAction(element, callback) {
+      var touchHandled = false;
+      element.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        touchHandled = true;
+        callback();
+      }, { passive: false });
+      element.addEventListener('click', function(e) {
+        if (!touchHandled) callback();
+        touchHandled = false;
+      });
+    }
+
+    var keys = document.querySelectorAll('.key');
+    for (var i = 0; i < keys.length; i++) {
+      (function(btn) {
+        var keyVal = btn.getAttribute('data-k');
+        bindAction(btn, function() { handleKey(keyVal); });
+      })(keys[i]);
+    }
+
+    bindAction(document.getElementById('sendBtn'), sendEmail);
+  </script>
+</body>
+</html>
