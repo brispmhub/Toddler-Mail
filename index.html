@@ -380,6 +380,7 @@
     var isSending = false;
     var audioCtx = null;
     var selectedRecipient = "Gaga";
+    window.activeUtterances = [];
 
     var recipientBtn = document.getElementById('recipientBtn');
     var recipientMenu = document.getElementById('recipientMenu');
@@ -399,97 +400,33 @@
       } catch (e) {}
     }
 
-    // --- REFINED SPEECH & VOCAL FORMANT SYNTHESIZER ---
-    // Synthesizes speech syllables and clear musical formants via Web Audio directly.
-    function vocalizeSyllable(f0, f1, f2, startTime, duration) {
-      if (!audioCtx) return;
-
-      var osc = audioCtx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(f0, startTime);
-
-      var filter1 = audioCtx.createBiquadFilter();
-      filter1.type = 'bandpass';
-      filter1.frequency.setValueAtTime(f1, startTime);
-      filter1.Q.setValueAtTime(4.0, startTime);
-
-      var filter2 = audioCtx.createBiquadFilter();
-      filter2.type = 'bandpass';
-      filter2.frequency.setValueAtTime(f2, startTime);
-      filter2.Q.setValueAtTime(4.0, startTime);
-
-      var gainNode = audioCtx.createGain();
-      gainNode.gain.setValueAtTime(0.001, startTime);
-      gainNode.gain.linearRampToValueAtTime(0.25, startTime + 0.03);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-      osc.connect(filter1);
-      osc.connect(filter2);
-      filter1.connect(gainNode);
-      filter2.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-
-      osc.start(startTime);
-      osc.stop(startTime + duration);
-    }
-
-    function announceSpeech(phraseType, name) {
+    function speakDirect(phrase) {
       ensureAudio();
 
-      // Dual path: Try native speech if browser permits, but the Web Audio formant plays reliably
+      if (!('speechSynthesis' in window)) return;
+
       try {
-        if ('speechSynthesis' in window) {
+        if (window.speechSynthesis.paused) {
           window.speechSynthesis.resume();
-          var utter = new SpeechSynthesisUtterance(phraseType === 'send' ? "Email sent to " + name + "!" : "To " + name);
-          utter.rate = 0.90;
-          utter.pitch = 1.25;
-          utter.lang = 'en-US';
-          window.speechSynthesis.speak(utter);
         }
+
+        var utter = new SpeechSynthesisUtterance(phrase);
+        utter.rate = 0.90;
+        utter.pitch = 1.20;
+        utter.lang = 'en-US';
+
+        window.activeUtterances.push(utter);
+        utter.onend = function() {
+          var idx = window.activeUtterances.indexOf(utter);
+          if (idx > -1) window.activeUtterances.splice(idx, 1);
+        };
+        utter.onerror = function() {
+          var idx = window.activeUtterances.indexOf(utter);
+          if (idx > -1) window.activeUtterances.splice(idx, 1);
+        };
+
+        window.speechSynthesis.speak(utter);
       } catch (e) {}
-
-      if (!audioCtx) return;
-      var now = audioCtx.currentTime;
-
-      if (phraseType === 'select') {
-        // Formant speech signature: "To" (f0=350Hz, [u] vowel: F1=300, F2=870)
-        vocalizeSyllable(350, 300, 870, now, 0.18);
-
-        // Syllables corresponding to the recipient's name
-        if (name === 'Gaga') {
-          vocalizeSyllable(320, 700, 1220, now + 0.20, 0.16); // "Ga"
-          vocalizeSyllable(320, 700, 1220, now + 0.38, 0.20); // "ga"
-        } else if (name === 'Mama') {
-          vocalizeSyllable(340, 750, 1200, now + 0.20, 0.16); // "Ma"
-          vocalizeSyllable(310, 750, 1200, now + 0.38, 0.20); // "ma"
-        } else if (name === 'Grandma') {
-          vocalizeSyllable(310, 600, 1100, now + 0.20, 0.16); // "Grand"
-          vocalizeSyllable(330, 750, 1200, now + 0.38, 0.22); // "ma"
-        } else if (name === 'Grandpa') {
-          vocalizeSyllable(310, 600, 1100, now + 0.20, 0.16); // "Grand"
-          vocalizeSyllable(340, 700, 1150, now + 0.38, 0.22); // "pa"
-        } else if (name === 'Uncle Dadoo') {
-          vocalizeSyllable(330, 500, 1000, now + 0.20, 0.14); // "Un-"
-          vocalizeSyllable(300, 450, 950,  now + 0.35, 0.14); // "cle"
-          vocalizeSyllable(360, 700, 1220, now + 0.50, 0.16); // "Da-"
-          vocalizeSyllable(390, 300, 870,  now + 0.68, 0.22); // "doo"
-        }
-      } else if (phraseType === 'send') {
-        // Melodic celebratory confirmation phrase: 4 vibrant ascending notes
-        var melodicNotes = [523.25, 659.25, 783.99, 1046.50];
-        melodicNotes.forEach(function(freq, idx) {
-          var osc = audioCtx.createOscillator();
-          var gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, now + (idx * 0.09));
-          gain.gain.setValueAtTime(0.22, now + (idx * 0.09));
-          gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.09) + 0.32);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(now + (idx * 0.09));
-          osc.stop(now + (idx * 0.09) + 0.32);
-        });
-      }
     }
 
     function toggleRecipientMenu() {
@@ -504,7 +441,10 @@
       selectedRecipient = name;
       recipientNameSpan.textContent = label;
       recipientMenu.classList.remove('open');
-      announceSpeech('select', name);
+
+      playTone('tap');
+      // Speaks "To [Recipient]"
+      speakDirect("To " + name);
     }
 
     bindAction(recipientBtn, toggleRecipientMenu);
@@ -561,7 +501,7 @@
           filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
           var gainWhoosh = audioCtx.createGain();
           gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
-          gainWhoosh.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.15);
+          gainWhoosh.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.15);
           gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
           noise.connect(filter);
           filter.connect(gainWhoosh);
@@ -625,11 +565,15 @@
       isSending = true;
       if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
 
-      announceSpeech('send', selectedRecipient);
+      // 1. Speaks "Email sent to [Recipient]!" (e.g., "Email sent to Gaga!", "Email sent to Mama!")
+      speakDirect("Email sent to " + selectedRecipient + "!");
+
+      // 2. Play Whoosh & trigger animations
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
+      // 3. Reset card after flying away
       setTimeout(function() {
         currentText = "";
         updateDisplay();
@@ -647,7 +591,12 @@
     var lastTouchEnd = 0;
     document.addEventListener('touchend', function(e) {
       var now = Date.now();
-      if (now - lastTouchEnd <= 300) { e.preventDefault(); }
+      if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+        return;
+      }
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
       lastTouchEnd = now;
     }, { passive: false });
 
