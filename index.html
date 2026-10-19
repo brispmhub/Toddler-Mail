@@ -8,6 +8,8 @@
   <meta name="apple-mobile-web-app-title" content="Toddler Mail">
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
+  <!-- Cloud-backed natural human voice engine (Australian / UK female voice) -->
+  <script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE_KEY"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -239,8 +241,6 @@
 </head>
 <body>
 
-  <audio id="mediaPlayer" preload="auto"></audio>
-
   <div class="app-wrapper" id="appWrapper">
     <div class="confetti-layer" id="confettiLayer"></div>
 
@@ -340,7 +340,6 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var mediaPlayer = document.getElementById('mediaPlayer');
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
@@ -358,38 +357,24 @@
       } catch (e) {}
     }
 
-    // Google Translate / TTS public audio endpoints with natural English voice
-    // These return pristine, human MP3 audio directly to standard <audio> elements
-    var VOICE_URLS = {
-      "Gaga": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=To%20Gaga",
-      "Mama": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=To%20Mama",
-      "Grandma": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=To%20Grandma",
-      "Grandpa": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=To%20Grandpa",
-      "Uncle Dadoo": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=To%20Uncle%20Dadoo",
-      "Send_Gaga": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=Email%20sent%20to%20Gaga!",
-      "Send_Mama": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=Email%20sent%20to%20Mama!",
-      "Send_Grandma": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=Email%20sent%20to%20Grandma!",
-      "Send_Grandpa": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=Email%20sent%20to%20Grandpa!",
-      "Send_Uncle Dadoo": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en-US&q=Email%20sent%20to%20Uncle%20Dadoo!"
-    };
-
-    function playHumanVoice(key) {
+    // Natural human female speech using Australian English profile
+    function speakHumanVoice(phrase) {
       ensureAudio();
-      var url = VOICE_URLS[key];
-      if (!url) return;
-
       try {
-        mediaPlayer.src = url;
-        mediaPlayer.volume = 1.0;
-        var p = mediaPlayer.play();
-        if (p !== undefined) {
-          p.catch(function(e) {});
+        if (window.responsiveVoice) {
+          responsiveVoice.cancel();
+          // Uses Australian or UK female voice
+          responsiveVoice.speak(phrase, "Australian Female", {
+            pitch: 1.05,
+            rate: 0.9,
+            volume: 1.0
+          });
         }
-      } catch (err) {}
+      } catch (e) {}
     }
 
     recipientSelect.addEventListener('change', function() {
-      playHumanVoice(recipientSelect.value);
+      speakHumanVoice("To " + recipientSelect.value);
     });
 
     function playTone(type) {
@@ -497,8 +482,8 @@
       if (isSending) return;
       isSending = true;
 
-      // 1. Play real human voice
-      playHumanVoice("Send_" + recipientSelect.value);
+      // 1. Natural spoken confirmation
+      speakHumanVoice("Email sent to " + recipientSelect.value + "!");
 
       // 2. Play Whoosh sound & confetti
       playTone('whoosh');
