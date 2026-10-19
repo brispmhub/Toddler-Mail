@@ -380,13 +380,27 @@
     var isSending = false;
     var audioCtx = null;
     var selectedRecipient = "Gaga";
-    window.activeSpeechUtterance = null;
+    var cachedVoices = [];
+
+    // Global reference to prevent garbage collection on WebKit
+    window.currentSpeechUtterance = null;
 
     var recipientBtn = document.getElementById('recipientBtn');
     var recipientMenu = document.getElementById('recipientMenu');
     var recipientNameSpan = document.getElementById('recipientName');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
+
+    // Pre-populate system voices as soon as WebKit initializes them
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    loadVoices();
+    if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
 
     function ensureAudio() {
       try {
@@ -400,33 +414,62 @@
       } catch (e) {}
     }
 
-    // --- Direct Speech Engine for iPadOS ---
-    function speakDirect(phrase) {
-      ensureAudio();
-
-      if (!('speechSynthesis' in window)) return;
+    // Direct Speech Dispatcher with explicit voice binding and completion handling
+    function speakText(phrase, onFinished) {
+      if (!('speechSynthesis' in window)) {
+        if (onFinished) onFinished();
+        return;
+      }
 
       try {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
+        // Clear any stalled or pending utterances in WebKit's queue
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
 
         var utter = new SpeechSynthesisUtterance(phrase);
-        utter.rate = 0.85;
+        utter.rate = 0.88;
         utter.pitch = 1.1;
         utter.lang = 'en-US';
         utter.volume = 1.0;
 
-        window.activeSpeechUtterance = utter;
-        utter.onend = function() {
-          window.activeSpeechUtterance = null;
-        };
-        utter.onerror = function() {
-          window.activeSpeechUtterance = null;
-        };
+        if (cachedVoices.length === 0) {
+          cachedVoices = window.speechSynthesis.getVoices();
+        }
 
+        // Explicitly bind an English voice to satisfy iPadOS sandboxing
+        if (cachedVoices.length > 0) {
+          var matchedVoice = null;
+          for (var i = 0; i < cachedVoices.length; i++) {
+            if (cachedVoices[i].lang && cachedVoices[i].lang.indexOf('en') === 0) {
+              matchedVoice = cachedVoices[i];
+              break;
+            }
+          }
+          if (matchedVoice) {
+            utter.voice = matchedVoice;
+          }
+        }
+
+        var executed = false;
+        function done() {
+          if (!executed) {
+            executed = true;
+            window.currentSpeechUtterance = null;
+            if (onFinished) onFinished();
+          }
+        }
+
+        utter.onend = done;
+        utter.onerror = done;
+
+        // Fallback timeout in case WebKit drops the onend callback
+        setTimeout(done, 1800);
+
+        window.currentSpeechUtterance = utter;
         window.speechSynthesis.speak(utter);
-      } catch (err) {}
+      } catch (err) {
+        if (onFinished) onFinished();
+      }
     }
 
     function toggleRecipientMenu() {
@@ -442,8 +485,8 @@
       recipientNameSpan.textContent = label;
       recipientMenu.classList.remove('open');
 
-      playTone('tap');
-      speakDirect("To " + name);
+      // Speak directly upon physical touch
+      speakText("To " + name, null);
     }
 
     bindAction(recipientBtn, toggleRecipientMenu);
@@ -564,25 +607,24 @@
       isSending = true;
       if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
 
-      // 1. Fire spoken phrase immediately on direct touch
-      speakDirect("Email sent to " + selectedRecipient + "!");
+      // 1. Voice plays exclusively first so Web Audio buffers do not cancel the utterance
+      speakText("Email sent to " + selectedRecipient + "!", function() {
+        // 2. Play Whoosh and launch flying envelope once voice completes
+        playTone('whoosh');
+        triggerUpwardConfetti();
+        emailCard.classList.add('flying');
 
-      // 2. Play Whoosh & trigger animations
-      playTone('whoosh');
-      triggerUpwardConfetti();
-      emailCard.classList.add('flying');
-
-      // 3. Reset card
-      setTimeout(function() {
-        currentText = "";
-        updateDisplay();
-        emailCard.style.transition = 'none';
-        emailCard.classList.remove('flying');
         setTimeout(function() {
-          emailCard.style.transition = '';
-          isSending = false;
-        }, 50);
-      }, 850);
+          currentText = "";
+          updateDisplay();
+          emailCard.style.transition = 'none';
+          emailCard.classList.remove('flying');
+          setTimeout(function() {
+            emailCard.style.transition = '';
+            isSending = false;
+          }, 50);
+        }, 850);
+      });
     }
 
     document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });
