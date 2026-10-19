@@ -247,11 +247,11 @@
         <div class="recipient-wrapper">
           <span class="to-label">To:</span>
           <select class="recipient-select" id="recipientSelect">
-            <option value="Gaga">Gaga 👨</option>
-            <option value="Mama">Mama 👩</option>
-            <option value="Grandma">Grandma 🤶</option>
-            <option value="Grandpa">Grandpa 🎅</option>
-            <option value="Uncle Dadoo">Uncle Dadoo 🤡</option>
+            <option value="gaga">Gaga 👨</option>
+            <option value="mama">Mama 👩</option>
+            <option value="grandma">Grandma 🤶</option>
+            <option value="grandpa">Grandpa 🎅</option>
+            <option value="uncle_dadoo">Uncle Dadoo 🤡</option>
           </select>
         </div>
 
@@ -263,7 +263,7 @@
 
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Numbers 1 ... 0 -->
+      <!-- Row 1: Numbers -->
       <div class="kb-row">
         <button type="button" class="key num-key" data-k="1">1</button>
         <button type="button" class="key num-key" data-k="2">2</button>
@@ -277,7 +277,7 @@
         <button type="button" class="key num-key" data-k="0">0</button>
       </div>
 
-      <!-- Letters Q - P -->
+      <!-- Row 2: Letters Q - P -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -291,7 +291,7 @@
         <button type="button" class="key" data-k="P">P</button>
       </div>
 
-      <!-- Letters A - L -->
+      <!-- Row 3: Letters A - L -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -304,7 +304,7 @@
         <button type="button" class="key" data-k="L">L</button>
       </div>
 
-      <!-- Letters Z - M, Punctuation , . and Backspace -->
+      <!-- Row 4: Letters Z - M, Punctuation, Backspace -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -318,7 +318,7 @@
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
 
-      <!-- Space Bar & Return Key -->
+      <!-- Row 5: Space & Return -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
         <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
@@ -355,67 +355,17 @@
       } catch (e) {}
     }
 
-    // Direct Web-Audio Melodic Audio Engine (Bypasses all WebKit speech locks)
-    function playMelodicVoice(person) {
+    // Play real MP3 voice file stored in your repository
+    function playVoiceFile(filename) {
       ensureAudio();
-      if (!audioCtx) return;
-      var now = audioCtx.currentTime;
-
-      // Clean musical chime motifs tailored for toddlers
-      var tones = [];
-      if (person === 'Gaga') {
-        tones = [{f: 440, d: 0.16}, {f: 554.37, d: 0.28}]; // Upbeat major 3rd
-      } else if (person === 'Mama') {
-        tones = [{f: 587.33, d: 0.16}, {f: 880.00, d: 0.30}]; // Bright fifth
-      } else if (person === 'Grandma') {
-        tones = [{f: 523.25, d: 0.14}, {f: 659.25, d: 0.14}, {f: 783.99, d: 0.30}]; // Gentle arpeggio
-      } else if (person === 'Grandpa') {
-        tones = [{f: 261.63, d: 0.18}, {f: 329.63, d: 0.18}, {f: 392.00, d: 0.34}]; // Low warm chime
-      } else if (person === 'Uncle Dadoo') {
-        tones = [{f: 440, d: 0.12}, {f: 659.25, d: 0.12}, {f: 554.37, d: 0.12}, {f: 880, d: 0.28}]; // Playful motif
-      }
-
-      var cursor = 0;
-      tones.forEach(function(item) {
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(item.f, now + cursor);
-        gain.gain.setValueAtTime(0.001, now + cursor);
-        gain.gain.linearRampToValueAtTime(0.35, now + cursor + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + cursor + item.d);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + cursor);
-        osc.stop(now + cursor + item.d);
-        cursor += item.d * 0.85;
-      });
-    }
-
-    function playSendCelebration() {
-      ensureAudio();
-      if (!audioCtx) return;
-      var now = audioCtx.currentTime;
-
-      // 4-Note Celebration Fanfare: C5 -> E5 -> G5 -> High C6
-      var notes = [523.25, 659.25, 783.99, 1046.50];
-      notes.forEach(function(freq, idx) {
-        var osc = audioCtx.createOscillator();
-        var gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + (idx * 0.11));
-        gain.gain.setValueAtTime(0.001, now + (idx * 0.11));
-        gain.gain.linearRampToValueAtTime(0.38, now + (idx * 0.11) + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.11) + 0.35);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now + (idx * 0.11));
-        osc.stop(now + (idx * 0.11) + 0.35);
-      });
+      try {
+        var audio = new Audio('./' + filename);
+        audio.play().catch(function(e) {});
+      } catch (err) {}
     }
 
     recipientSelect.addEventListener('change', function() {
-      playMelodicVoice(recipientSelect.value);
+      playVoiceFile('to_' + recipientSelect.value + '.mp3');
     });
 
     function playTone(type) {
@@ -523,8 +473,8 @@
       if (isSending) return;
       isSending = true;
 
-      // 1. Play Send Fanfare
-      playSendCelebration();
+      // 1. Play real MP3 voice file
+      playVoiceFile('sent.mp3');
 
       // 2. Play Whoosh sound & confetti
       playTone('whoosh');

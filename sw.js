@@ -1,8 +1,14 @@
-const CACHE_NAME = 'toddler-mail-v42';
+const CACHE_NAME = 'toddler-mail-v43';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './to_gaga.mp3',
+  './to_mama.mp3',
+  './to_grandma.mp3',
+  './to_grandpa.mp3',
+  './to_uncle_dadoo.mp3',
+  './sent.mp3'
 ];
 
 self.addEventListener('install', (event) => {
