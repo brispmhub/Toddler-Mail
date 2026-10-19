@@ -380,7 +380,7 @@
     var isSending = false;
     var audioCtx = null;
     var selectedRecipient = "Gaga";
-    window.activeUtterances = [];
+    window.activeSpeechUtterance = null;
 
     var recipientBtn = document.getElementById('recipientBtn');
     var recipientMenu = document.getElementById('recipientMenu');
@@ -400,6 +400,7 @@
       } catch (e) {}
     }
 
+    // --- Direct Speech Engine for iPadOS ---
     function speakDirect(phrase) {
       ensureAudio();
 
@@ -411,22 +412,21 @@
         }
 
         var utter = new SpeechSynthesisUtterance(phrase);
-        utter.rate = 0.90;
-        utter.pitch = 1.20;
+        utter.rate = 0.85;
+        utter.pitch = 1.1;
         utter.lang = 'en-US';
+        utter.volume = 1.0;
 
-        window.activeUtterances.push(utter);
+        window.activeSpeechUtterance = utter;
         utter.onend = function() {
-          var idx = window.activeUtterances.indexOf(utter);
-          if (idx > -1) window.activeUtterances.splice(idx, 1);
+          window.activeSpeechUtterance = null;
         };
         utter.onerror = function() {
-          var idx = window.activeUtterances.indexOf(utter);
-          if (idx > -1) window.activeUtterances.splice(idx, 1);
+          window.activeSpeechUtterance = null;
         };
 
         window.speechSynthesis.speak(utter);
-      } catch (e) {}
+      } catch (err) {}
     }
 
     function toggleRecipientMenu() {
@@ -443,7 +443,6 @@
       recipientMenu.classList.remove('open');
 
       playTone('tap');
-      // Speaks "To [Recipient]"
       speakDirect("To " + name);
     }
 
@@ -565,7 +564,7 @@
       isSending = true;
       if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
 
-      // 1. Speaks "Email sent to [Recipient]!" (e.g., "Email sent to Gaga!", "Email sent to Mama!")
+      // 1. Fire spoken phrase immediately on direct touch
       speakDirect("Email sent to " + selectedRecipient + "!");
 
       // 2. Play Whoosh & trigger animations
@@ -573,7 +572,7 @@
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset card after flying away
+      // 3. Reset card
       setTimeout(function() {
         currentText = "";
         updateDisplay();
