@@ -121,31 +121,6 @@
       color: #94a3b8;
     }
 
-    /* Prominent Activation Button */
-    .audio-test-bar {
-      display: flex;
-      justify-content: center;
-      margin: 4px 0;
-      z-index: 30;
-    }
-
-    .audio-test-btn {
-      background: #f59e0b;
-      color: #ffffff;
-      border: 2px solid #d97706;
-      border-radius: 20px;
-      padding: 8px 24px;
-      font-size: 18px;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-    }
-
-    .audio-test-btn:active {
-      background: #d97706;
-      transform: scale(0.96);
-    }
-
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
@@ -286,11 +261,6 @@
       <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
     </div>
 
-    <!-- The Voice Activator Button -->
-    <div class="audio-test-bar">
-      <button class="audio-test-btn" id="audioTestBtn" type="button">🔊 Tap to Start Voice!</button>
-    </div>
-
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
       <!-- Row 1: Numbers -->
@@ -368,12 +338,10 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
-    var voiceActive = false;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
-    var audioTestBtn = document.getElementById('audioTestBtn');
 
     function ensureAudio() {
       try {
@@ -387,34 +355,68 @@
       } catch (e) {}
     }
 
-    // Direct, synchronous speech function
-    function speakText(phrase) {
+    // --- High-Clarity Musical Motifs for Toddlers ---
+    // Uses the working Web Audio engine directly - 100% audible on iPad
+    function playRecipientChime(name) {
       ensureAudio();
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.resume();
-          var utter = new SpeechSynthesisUtterance(phrase);
-          utter.rate = 0.85;
-          utter.pitch = 1.15;
-          utter.lang = 'en-US';
-          window.speechSynthesis.speak(utter);
-        }
-      } catch (e) {}
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+
+      // Distinct melodic signatures for each person
+      var notes = [];
+      if (name === 'Gaga') {
+        notes = [{f: 440, d: 0.16}, {f: 554.37, d: 0.28}]; // A4 -> C#5 (Upbeat 2-tone)
+      } else if (name === 'Mama') {
+        notes = [{f: 587.33, d: 0.16}, {f: 880.00, d: 0.30}]; // D5 -> A5 (Bright high 2-tone)
+      } else if (name === 'Grandma') {
+        notes = [{f: 523.25, d: 0.14}, {f: 659.25, d: 0.14}, {f: 783.99, d: 0.32}]; // C5 -> E5 -> G5 (Warm arpeggio)
+      } else if (name === 'Grandpa') {
+        notes = [{f: 261.63, d: 0.18}, {f: 329.63, d: 0.18}, {f: 392.00, d: 0.34}]; // C4 -> E4 -> G4 (Gentle low chime)
+      } else if (name === 'Uncle Dadoo') {
+        notes = [{f: 440, d: 0.12}, {f: 659.25, d: 0.12}, {f: 554.37, d: 0.12}, {f: 880, d: 0.28}]; // Bouncy 4-note motif
+      }
+
+      var cursor = 0;
+      notes.forEach(function(n) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.f, now + cursor);
+        gain.gain.setValueAtTime(0.001, now + cursor);
+        gain.gain.linearRampToValueAtTime(0.32, now + cursor + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + cursor + n.d);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + cursor);
+        osc.stop(now + cursor + n.d);
+        cursor += n.d * 0.85;
+      });
     }
 
-    // Button unlocks voice session directly
-    bindAction(audioTestBtn, function() {
+    function playSendFanfare() {
       ensureAudio();
-      voiceActive = true;
-      speakText("Voice is ready");
-      audioTestBtn.textContent = "✓ Voice Active";
-      audioTestBtn.style.background = "#22c55e";
-      audioTestBtn.style.borderColor = "#16a34a";
-    });
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+
+      // Triumphant 4-note fanfare: C5 -> E5 -> G5 -> High C6
+      var fanfare = [523.25, 659.25, 783.99, 1046.50];
+      fanfare.forEach(function(freq, i) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + (i * 0.11));
+        gain.gain.setValueAtTime(0.001, now + (i * 0.11));
+        gain.gain.linearRampToValueAtTime(0.35, now + (i * 0.11) + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (i * 0.11) + 0.38);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + (i * 0.11));
+        osc.stop(now + (i * 0.11) + 0.38);
+      });
+    }
 
     recipientSelect.addEventListener('change', function() {
-      ensureAudio();
-      speakText("To " + recipientSelect.value);
+      playRecipientChime(recipientSelect.value);
     });
 
     function playTone(type) {
@@ -522,10 +524,10 @@
       if (isSending) return;
       isSending = true;
 
-      // 1. Spoken voice announcement
-      speakText("Email sent to " + recipientSelect.value);
+      // 1. Play Send Fanfare
+      playSendFanfare();
 
-      // 2. Whoosh sound & confetti
+      // 2. Play Whoosh sound & confetti
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
