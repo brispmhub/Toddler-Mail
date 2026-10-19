@@ -32,18 +32,19 @@
     .app-wrapper {
       width: 100%;
       height: 100%;
-      padding: 12px 16px;
+      padding: 10px 14px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
     }
 
+    /* Email compose card */
     .email-container {
       background: #ffffff;
-      border-radius: 20px;
-      padding: 14px 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      border-radius: 18px;
+      padding: 12px 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
       transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.8s ease;
       flex-shrink: 0;
       z-index: 20;
@@ -55,7 +56,7 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #f1f5f9;
-      padding-bottom: 10px;
+      padding-bottom: 8px;
       gap: 10px;
       position: relative;
     }
@@ -72,8 +73,8 @@
       color: #1d4ed8;
       background: #eff6ff;
       border: 2px solid #93c5fd;
-      border-radius: 14px;
-      padding: 8px 16px;
+      border-radius: 12px;
+      padding: 6px 14px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -87,11 +88,11 @@
     .recipient-menu {
       display: none;
       position: absolute;
-      top: 52px;
+      top: 50px;
       left: 0;
       background: #ffffff;
       border: 2px solid #93c5fd;
-      border-radius: 16px;
+      border-radius: 14px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.18);
       padding: 6px;
       flex-direction: column;
@@ -107,8 +108,8 @@
     .recipient-option {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 12px 16px;
+      border-radius: 10px;
+      padding: 10px 14px;
       font-size: 20px;
       font-weight: 700;
       color: #1e293b;
@@ -128,8 +129,8 @@
       background: #22c55e;
       color: white;
       border: none;
-      border-radius: 40px;
-      padding: 10px 24px;
+      border-radius: 35px;
+      padding: 8px 22px;
       font-size: 20px;
       font-weight: 800;
       cursor: pointer;
@@ -143,14 +144,15 @@
       background: #16a34a;
     }
 
+    /* Message content area with pre-wrap for spaces and newlines */
     .email-content {
-      min-height: 85px;
-      max-height: 115px;
-      font-size: 28px;
+      min-height: 80px;
+      max-height: 110px;
+      font-size: 26px;
       line-height: 1.3;
       font-weight: 600;
       color: #1e293b;
-      padding-top: 10px;
+      padding-top: 8px;
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-word;
@@ -160,20 +162,46 @@
       color: #94a3b8;
     }
 
+    /* Audio Activator Bar */
+    .audio-test-bar {
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+      z-index: 30;
+    }
+
+    .audio-test-btn {
+      background: #f59e0b;
+      color: #ffffff;
+      border: 2px solid #d97706;
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(245, 158, 11, 0.35);
+    }
+
+    .audio-test-btn:active {
+      background: #d97706;
+      transform: scale(0.96);
+    }
+
     .flying {
       transform: translate(600px, -800px) scale(0.1) rotate(20deg);
       opacity: 0;
     }
 
+    /* Keyboard layout */
     .keyboard {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.88);
-      padding: 12px;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-      margin-bottom: 4px;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px;
+      border-radius: 18px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+      margin-bottom: 2px;
       touch-action: none;
       z-index: 10;
     }
@@ -181,7 +209,7 @@
     .kb-row {
       display: flex;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .key {
@@ -189,12 +217,12 @@
       border: 1px solid #cbd5e1;
       border-bottom: 3px solid #94a3b8;
       border-radius: 8px;
-      font-size: 22px;
+      font-size: 21px;
       font-weight: bold;
       color: #1e293b;
-      height: 50px;
+      height: 48px;
       flex: 1;
-      max-width: 62px;
+      max-width: 60px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -211,18 +239,18 @@
     .key.num-key {
       background: #f8fafc;
       color: #0f172a;
-      font-size: 21px;
+      font-size: 20px;
     }
 
     .key.punct-key {
       background: #f1f5f9;
       color: #334155;
-      font-size: 24px;
-      max-width: 58px;
+      font-size: 22px;
+      max-width: 55px;
     }
 
     .key.backspace {
-      max-width: 72px;
+      max-width: 68px;
       background: #fee2e2;
       border-color: #fca5a5;
       border-bottom-color: #f87171;
@@ -235,16 +263,17 @@
       border-color: #bfdbfe;
       border-bottom-color: #93c5fd;
       color: #1d4ed8;
-      font-size: 20px;
+      font-size: 18px;
     }
 
     .key.space {
       max-width: 420px;
-      font-size: 16px;
+      font-size: 15px;
       letter-spacing: 2px;
       color: #64748b;
     }
 
+    /* Confetti */
     .confetti-layer {
       position: absolute;
       top: 0;
@@ -281,6 +310,7 @@
   <div class="app-wrapper" id="appWrapper">
     <div class="confetti-layer" id="confettiLayer"></div>
 
+    <!-- Email card -->
     <div class="email-container" id="emailCard">
       <div class="email-header">
         <div class="recipient-wrapper">
@@ -303,8 +333,14 @@
       <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
     </div>
 
+    <!-- iPad Audio Unlocker / Test button (the proven v13 mechanism) -->
+    <div class="audio-test-bar" id="audioTestArea">
+      <button class="audio-test-btn" id="audioTestBtn" type="button">🔊 Tap to Start Voice</button>
+    </div>
+
+    <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Numbers 1 ... 0 -->
+      <!-- 1 ... 0 -->
       <div class="kb-row">
         <button type="button" class="key num-key" data-k="1">1</button>
         <button type="button" class="key num-key" data-k="2">2</button>
@@ -318,7 +354,7 @@
         <button type="button" class="key num-key" data-k="0">0</button>
       </div>
 
-      <!-- Letters Q - P -->
+      <!-- Q - P -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -332,7 +368,7 @@
         <button type="button" class="key" data-k="P">P</button>
       </div>
 
-      <!-- Letters A - L -->
+      <!-- A - L -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -345,7 +381,7 @@
         <button type="button" class="key" data-k="L">L</button>
       </div>
 
-      <!-- Letters Z - M, Punctuation , . and Backspace -->
+      <!-- Z - M, Punctuation, Backspace -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -359,7 +395,7 @@
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
 
-      <!-- Space Bar & Return Key -->
+      <!-- Space & Return -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
         <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
@@ -380,26 +416,27 @@
     var isSending = false;
     var audioCtx = null;
     var selectedRecipient = "Gaga";
-    var cachedVoices = [];
+    var speechVoices = [];
 
-    // Global reference to prevent garbage collection on WebKit
-    window.currentSpeechUtterance = null;
+    // Keep active utterance in global window object to prevent Safari garbage collection
+    window.toddlerUtterance = null;
 
     var recipientBtn = document.getElementById('recipientBtn');
     var recipientMenu = document.getElementById('recipientMenu');
     var recipientNameSpan = document.getElementById('recipientName');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
+    var audioTestBtn = document.getElementById('audioTestBtn');
+    var audioTestArea = document.getElementById('audioTestArea');
 
-    // Pre-populate system voices as soon as WebKit initializes them
-    function loadVoices() {
+    function initVoices() {
       if ('speechSynthesis' in window) {
-        cachedVoices = window.speechSynthesis.getVoices();
+        speechVoices = window.speechSynthesis.getVoices();
       }
     }
-    loadVoices();
+    initVoices();
     if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+      window.speechSynthesis.onvoiceschanged = initVoices;
     }
 
     function ensureAudio() {
@@ -414,63 +451,50 @@
       } catch (e) {}
     }
 
-    // Direct Speech Dispatcher with explicit voice binding and completion handling
-    function speakText(phrase, onFinished) {
-      if (!('speechSynthesis' in window)) {
-        if (onFinished) onFinished();
-        return;
-      }
+    // Direct speech execution matching the original v13/v14 test button implementation
+    function speakSpokenWords(text) {
+      if (!('speechSynthesis' in window)) return;
 
       try {
-        // Clear any stalled or pending utterances in WebKit's queue
-        window.speechSynthesis.cancel();
+        ensureAudio();
         window.speechSynthesis.resume();
 
-        var utter = new SpeechSynthesisUtterance(phrase);
+        var utter = new SpeechSynthesisUtterance(text);
         utter.rate = 0.88;
-        utter.pitch = 1.1;
+        utter.pitch = 1.15;
         utter.lang = 'en-US';
-        utter.volume = 1.0;
 
-        if (cachedVoices.length === 0) {
-          cachedVoices = window.speechSynthesis.getVoices();
+        if (speechVoices.length === 0) {
+          speechVoices = window.speechSynthesis.getVoices();
         }
 
-        // Explicitly bind an English voice to satisfy iPadOS sandboxing
-        if (cachedVoices.length > 0) {
-          var matchedVoice = null;
-          for (var i = 0; i < cachedVoices.length; i++) {
-            if (cachedVoices[i].lang && cachedVoices[i].lang.indexOf('en') === 0) {
-              matchedVoice = cachedVoices[i];
-              break;
-            }
-          }
-          if (matchedVoice) {
-            utter.voice = matchedVoice;
+        // Match English voice if available
+        for (var i = 0; i < speechVoices.length; i++) {
+          if (speechVoices[i].lang && speechVoices[i].lang.indexOf('en') === 0) {
+            utter.voice = speechVoices[i];
+            break;
           }
         }
 
-        var executed = false;
-        function done() {
-          if (!executed) {
-            executed = true;
-            window.currentSpeechUtterance = null;
-            if (onFinished) onFinished();
-          }
-        }
+        window.toddlerUtterance = utter;
+        utter.onend = function() { window.toddlerUtterance = null; };
+        utter.onerror = function() { window.toddlerUtterance = null; };
 
-        utter.onend = done;
-        utter.onerror = done;
-
-        // Fallback timeout in case WebKit drops the onend callback
-        setTimeout(done, 1800);
-
-        window.currentSpeechUtterance = utter;
         window.speechSynthesis.speak(utter);
-      } catch (err) {
-        if (onFinished) onFinished();
-      }
+      } catch (err) {}
     }
+
+    // Audio Unlocker: Tapping this directly starts the speech engine
+    bindAction(audioTestBtn, function() {
+      ensureAudio();
+      speakSpokenWords("Voice is ready!");
+      audioTestBtn.textContent = "✓ Voice Active";
+      audioTestBtn.style.background = "#22c55e";
+      audioTestBtn.style.borderColor = "#16a34a";
+      setTimeout(function() {
+        audioTestArea.style.display = "none";
+      }, 1200);
+    });
 
     function toggleRecipientMenu() {
       if (recipientMenu.classList.contains('open')) {
@@ -485,8 +509,8 @@
       recipientNameSpan.textContent = label;
       recipientMenu.classList.remove('open');
 
-      // Speak directly upon physical touch
-      speakText("To " + name, null);
+      // Speak name directly
+      speakSpokenWords("To " + name);
     }
 
     bindAction(recipientBtn, toggleRecipientMenu);
@@ -529,27 +553,6 @@
           gainR.connect(audioCtx.destination);
           oscR.start();
           oscR.stop(audioCtx.currentTime + 0.08);
-        } else if (type === 'whoosh') {
-          var bufferSize = audioCtx.sampleRate * 0.45;
-          var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-          var data = buffer.getChannelData(0);
-          for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-          var noise = audioCtx.createBufferSource();
-          noise.buffer = buffer;
-          var filter = audioCtx.createBiquadFilter();
-          filter.type = 'bandpass';
-          filter.frequency.setValueAtTime(250, audioCtx.currentTime);
-          filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
-          filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
-          var gainWhoosh = audioCtx.createGain();
-          gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
-          gainWhoosh.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.15);
-          gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
-          noise.connect(filter);
-          filter.connect(gainWhoosh);
-          gainWhoosh.connect(audioCtx.destination);
-          noise.start();
-          noise.stop(audioCtx.currentTime + 0.45);
         }
       } catch (e) {}
     }
@@ -607,24 +610,24 @@
       isSending = true;
       if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
 
-      // 1. Voice plays exclusively first so Web Audio buffers do not cancel the utterance
-      speakText("Email sent to " + selectedRecipient + "!", function() {
-        // 2. Play Whoosh and launch flying envelope once voice completes
-        playTone('whoosh');
-        triggerUpwardConfetti();
-        emailCard.classList.add('flying');
+      // 1. Speak the complete phrase
+      speakSpokenWords("Email sent to " + selectedRecipient + "!");
 
+      // 2. Confetti and card animation
+      triggerUpwardConfetti();
+      emailCard.classList.add('flying');
+
+      // 3. Reset card
+      setTimeout(function() {
+        currentText = "";
+        updateDisplay();
+        emailCard.style.transition = 'none';
+        emailCard.classList.remove('flying');
         setTimeout(function() {
-          currentText = "";
-          updateDisplay();
-          emailCard.style.transition = 'none';
-          emailCard.classList.remove('flying');
-          setTimeout(function() {
-            emailCard.style.transition = '';
-            isSending = false;
-          }, 50);
-        }, 850);
-      });
+          emailCard.style.transition = '';
+          isSending = false;
+        }, 50);
+      }, 850);
     }
 
     document.addEventListener('dblclick', function(e) { e.preventDefault(); }, { passive: false });

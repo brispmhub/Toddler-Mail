@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toddler-mail-v28';
+const CACHE_NAME = 'toddler-mail-v30';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
