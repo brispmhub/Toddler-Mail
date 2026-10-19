@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-title" content="Toddler Mail">
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
-  <script src="./audio.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -80,7 +79,7 @@
       background: #eff6ff;
       border: 2px solid #93c5fd;
       border-radius: 10px;
-      padding: 4px 10px;
+      padding: 6px 12px;
       outline: none;
       font-family: inherit;
       cursor: pointer;
@@ -120,6 +119,31 @@
 
     .placeholder {
       color: #94a3b8;
+    }
+
+    /* Prominent Activation Button */
+    .audio-test-bar {
+      display: flex;
+      justify-content: center;
+      margin: 4px 0;
+      z-index: 30;
+    }
+
+    .audio-test-btn {
+      background: #f59e0b;
+      color: #ffffff;
+      border: 2px solid #d97706;
+      border-radius: 20px;
+      padding: 8px 24px;
+      font-size: 18px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .audio-test-btn:active {
+      background: #d97706;
+      transform: scale(0.96);
     }
 
     .flying {
@@ -262,8 +286,14 @@
       <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
     </div>
 
+    <!-- The Voice Activator Button -->
+    <div class="audio-test-bar">
+      <button class="audio-test-btn" id="audioTestBtn" type="button">🔊 Tap to Start Voice!</button>
+    </div>
+
+    <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Row 1: Numbers 1 ... 0 -->
+      <!-- Row 1: Numbers -->
       <div class="kb-row">
         <button type="button" class="key num-key" data-k="1">1</button>
         <button type="button" class="key num-key" data-k="2">2</button>
@@ -304,7 +334,7 @@
         <button type="button" class="key" data-k="L">L</button>
       </div>
 
-      <!-- Row 4: Letters Z - M, Punctuation , . and Backspace -->
+      <!-- Row 4: Letters Z - M, Punctuation, Backspace -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -318,7 +348,7 @@
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
 
-      <!-- Row 5: Space Bar & Return Key -->
+      <!-- Row 5: Space & Return -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
         <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
@@ -338,10 +368,12 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
+    var voiceActive = false;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
     var emailCard = document.getElementById('emailCard');
+    var audioTestBtn = document.getElementById('audioTestBtn');
 
     function ensureAudio() {
       try {
@@ -355,11 +387,34 @@
       } catch (e) {}
     }
 
+    // Direct, synchronous speech function
+    function speakText(phrase) {
+      ensureAudio();
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.resume();
+          var utter = new SpeechSynthesisUtterance(phrase);
+          utter.rate = 0.85;
+          utter.pitch = 1.15;
+          utter.lang = 'en-US';
+          window.speechSynthesis.speak(utter);
+        }
+      } catch (e) {}
+    }
+
+    // Button unlocks voice session directly
+    bindAction(audioTestBtn, function() {
+      ensureAudio();
+      voiceActive = true;
+      speakText("Voice is ready");
+      audioTestBtn.textContent = "✓ Voice Active";
+      audioTestBtn.style.background = "#22c55e";
+      audioTestBtn.style.borderColor = "#16a34a";
+    });
+
     recipientSelect.addEventListener('change', function() {
       ensureAudio();
-      if (typeof playAudioTrack === 'function') {
-        playAudioTrack("To " + recipientSelect.value);
-      }
+      speakText("To " + recipientSelect.value);
     });
 
     function playTone(type) {
@@ -467,14 +522,15 @@
       if (isSending) return;
       isSending = true;
 
-      if (typeof playAudioTrack === 'function') {
-        playAudioTrack("Sent");
-      }
+      // 1. Spoken voice announcement
+      speakText("Email sent to " + recipientSelect.value);
 
+      // 2. Whoosh sound & confetti
       playTone('whoosh');
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
+      // 3. Reset card
       setTimeout(function() {
         currentText = "";
         updateDisplay();
