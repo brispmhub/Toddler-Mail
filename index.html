@@ -263,7 +263,7 @@
 
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Row 1: Numbers -->
+      <!-- Numbers 1 ... 0 -->
       <div class="kb-row">
         <button type="button" class="key num-key" data-k="1">1</button>
         <button type="button" class="key num-key" data-k="2">2</button>
@@ -277,7 +277,7 @@
         <button type="button" class="key num-key" data-k="0">0</button>
       </div>
 
-      <!-- Row 2: Letters Q - P -->
+      <!-- Letters Q - P -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -291,7 +291,7 @@
         <button type="button" class="key" data-k="P">P</button>
       </div>
 
-      <!-- Row 3: Letters A - L -->
+      <!-- Letters A - L -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -304,7 +304,7 @@
         <button type="button" class="key" data-k="L">L</button>
       </div>
 
-      <!-- Row 4: Letters Z - M, Punctuation, Backspace -->
+      <!-- Letters Z - M, Punctuation , . and Backspace -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -318,7 +318,7 @@
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
 
-      <!-- Row 5: Space & Return -->
+      <!-- Space Bar & Return Key -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
         <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
@@ -338,6 +338,7 @@
     var currentText = "";
     var isSending = false;
     var audioCtx = null;
+    var currentVoice = null;
 
     var recipientSelect = document.getElementById('recipientSelect');
     var emailContent = document.getElementById('emailContent');
@@ -355,12 +356,40 @@
       } catch (e) {}
     }
 
-    // Play real MP3 voice file stored in your repository
+    function stopCurrentVoice() {
+      if (currentVoice) {
+        currentVoice.pause();
+        currentVoice.currentTime = 0;
+        currentVoice.onended = null;
+        currentVoice = null;
+      }
+    }
+
+    // Play single voice file
     function playVoiceFile(filename) {
       ensureAudio();
+      stopCurrentVoice();
       try {
-        var audio = new Audio('./' + filename);
-        audio.play().catch(function(e) {});
+        currentVoice = new Audio('./' + filename);
+        currentVoice.play().catch(function(e) {});
+      } catch (err) {}
+    }
+
+    // Play sent.mp3, then immediately play to_<recipient>.mp3 when finished
+    function playSentSequence(recipientKey) {
+      ensureAudio();
+      stopCurrentVoice();
+      try {
+        var firstAudio = new Audio('./sent.mp3');
+        var secondAudio = new Audio('./to_' + recipientKey + '.mp3');
+        
+        currentVoice = firstAudio;
+        firstAudio.onended = function() {
+          currentVoice = secondAudio;
+          secondAudio.play().catch(function(e) {});
+        };
+
+        firstAudio.play().catch(function(e) {});
       } catch (err) {}
     }
 
@@ -473,8 +502,8 @@
       if (isSending) return;
       isSending = true;
 
-      // 1. Play real MP3 voice file
-      playVoiceFile('sent.mp3');
+      // 1. Play "sent.mp3" followed immediately by "to_<recipient>.mp3"
+      playSentSequence(recipientSelect.value);
 
       // 2. Play Whoosh sound & confetti
       playTone('whoosh');
