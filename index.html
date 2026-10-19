@@ -39,7 +39,6 @@
       position: relative;
     }
 
-    /* Email compose card */
     .email-container {
       background: #ffffff;
       border-radius: 18px;
@@ -144,7 +143,6 @@
       background: #16a34a;
     }
 
-    /* Message content area with pre-wrap for spaces and newlines */
     .email-content {
       min-height: 80px;
       max-height: 110px;
@@ -162,7 +160,6 @@
       color: #94a3b8;
     }
 
-    /* Audio Activator Bar */
     .audio-test-bar {
       display: flex;
       justify-content: center;
@@ -192,7 +189,6 @@
       opacity: 0;
     }
 
-    /* Keyboard layout */
     .keyboard {
       display: flex;
       flex-direction: column;
@@ -273,7 +269,6 @@
       color: #64748b;
     }
 
-    /* Confetti */
     .confetti-layer {
       position: absolute;
       top: 0;
@@ -307,10 +302,14 @@
 </head>
 <body>
 
+  <!-- Audio Element to force iPadOS into active Media Playback Mode -->
+  <audio id="silentPrimer" preload="auto">
+    <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==" type="audio/wav">
+  </audio>
+
   <div class="app-wrapper" id="appWrapper">
     <div class="confetti-layer" id="confettiLayer"></div>
 
-    <!-- Email card -->
     <div class="email-container" id="emailCard">
       <div class="email-header">
         <div class="recipient-wrapper">
@@ -333,7 +332,7 @@
       <div class="email-content" id="emailContent"><span class="placeholder">Tap keys to write...</span></div>
     </div>
 
-    <!-- iPad Audio Unlocker / Test button (the proven v13 mechanism) -->
+    <!-- iPad Audio Unlocker Button -->
     <div class="audio-test-bar" id="audioTestArea">
       <button class="audio-test-btn" id="audioTestBtn" type="button">🔊 Tap to Start Voice</button>
     </div>
@@ -418,7 +417,6 @@
     var selectedRecipient = "Gaga";
     var speechVoices = [];
 
-    // Keep active utterance in global window object to prevent Safari garbage collection
     window.toddlerUtterance = null;
 
     var recipientBtn = document.getElementById('recipientBtn');
@@ -428,6 +426,7 @@
     var emailCard = document.getElementById('emailCard');
     var audioTestBtn = document.getElementById('audioTestBtn');
     var audioTestArea = document.getElementById('audioTestArea');
+    var silentPrimer = document.getElementById('silentPrimer');
 
     function initVoices() {
       if ('speechSynthesis' in window) {
@@ -451,12 +450,12 @@
       } catch (e) {}
     }
 
-    // Direct speech execution matching the original v13/v14 test button implementation
     function speakSpokenWords(text) {
       if (!('speechSynthesis' in window)) return;
 
       try {
         ensureAudio();
+        window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
 
         var utter = new SpeechSynthesisUtterance(text);
@@ -468,7 +467,6 @@
           speechVoices = window.speechSynthesis.getVoices();
         }
 
-        // Match English voice if available
         for (var i = 0; i < speechVoices.length; i++) {
           if (speechVoices[i].lang && speechVoices[i].lang.indexOf('en') === 0) {
             utter.voice = speechVoices[i];
@@ -484,9 +482,13 @@
       } catch (err) {}
     }
 
-    // Audio Unlocker: Tapping this directly starts the speech engine
+    // Audio Unlocker: primes Web Audio and switches iOS session to media output
     bindAction(audioTestBtn, function() {
       ensureAudio();
+      try {
+        silentPrimer.play().catch(function() {});
+      } catch (e) {}
+
       speakSpokenWords("Voice is ready!");
       audioTestBtn.textContent = "✓ Voice Active";
       audioTestBtn.style.background = "#22c55e";
@@ -508,8 +510,7 @@
       selectedRecipient = name;
       recipientNameSpan.textContent = label;
       recipientMenu.classList.remove('open');
-
-      // Speak name directly
+      playTone('tap');
       speakSpokenWords("To " + name);
     }
 
@@ -553,6 +554,27 @@
           gainR.connect(audioCtx.destination);
           oscR.start();
           oscR.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'whoosh') {
+          var bufferSize = audioCtx.sampleRate * 0.45;
+          var buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          var data = buffer.getChannelData(0);
+          for (var i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+          var noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+          var filter = audioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(250, audioCtx.currentTime);
+          filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+          filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.45);
+          var gainWhoosh = audioCtx.createGain();
+          gainWhoosh.gain.setValueAtTime(0.01, audioCtx.currentTime);
+          gainWhoosh.gain.linearRampToValueAtTime(0.22, audioCtx.currentTime + 0.15);
+          gainWhoosh.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.45);
+          noise.connect(filter);
+          filter.connect(gainWhoosh);
+          gainWhoosh.connect(audioCtx.destination);
+          noise.start();
+          noise.stop(audioCtx.currentTime + 0.45);
         }
       } catch (e) {}
     }
@@ -610,14 +632,17 @@
       isSending = true;
       if (recipientMenu.classList.contains('open')) recipientMenu.classList.remove('open');
 
-      // 1. Speak the complete phrase
+      // 1. Voice announcement
       speakSpokenWords("Email sent to " + selectedRecipient + "!");
 
-      // 2. Confetti and card animation
+      // 2. Audible Whoosh effect
+      playTone('whoosh');
+
+      // 3. Upward confetti & fly animation
       triggerUpwardConfetti();
       emailCard.classList.add('flying');
 
-      // 3. Reset card
+      // 4. Reset compose card
       setTimeout(function() {
         currentText = "";
         updateDisplay();
