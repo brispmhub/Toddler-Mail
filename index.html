@@ -8,8 +8,6 @@
   <meta name="apple-mobile-web-app-title" content="Toddler Mail">
   <link rel="manifest" href="./manifest.json">
   <title>Toddler Mail</title>
-  <!-- Cloud-backed natural human voice engine (Australian / UK female voice) -->
-  <script src="https://code.responsivevoice.org/responsivevoice.js?key=FREE_KEY"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -265,7 +263,7 @@
 
     <!-- Keyboard -->
     <div class="keyboard" id="keyboard">
-      <!-- Row 1: Numbers -->
+      <!-- Numbers 1 ... 0 -->
       <div class="kb-row">
         <button type="button" class="key num-key" data-k="1">1</button>
         <button type="button" class="key num-key" data-k="2">2</button>
@@ -279,7 +277,7 @@
         <button type="button" class="key num-key" data-k="0">0</button>
       </div>
 
-      <!-- Row 2: Letters Q - P -->
+      <!-- Letters Q - P -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Q">Q</button>
         <button type="button" class="key" data-k="W">W</button>
@@ -293,7 +291,7 @@
         <button type="button" class="key" data-k="P">P</button>
       </div>
 
-      <!-- Row 3: Letters A - L -->
+      <!-- Letters A - L -->
       <div class="kb-row">
         <button type="button" class="key" data-k="A">A</button>
         <button type="button" class="key" data-k="S">S</button>
@@ -306,7 +304,7 @@
         <button type="button" class="key" data-k="L">L</button>
       </div>
 
-      <!-- Row 4: Letters Z - M, Punctuation, Backspace -->
+      <!-- Letters Z - M, Punctuation , . and Backspace -->
       <div class="kb-row">
         <button type="button" class="key" data-k="Z">Z</button>
         <button type="button" class="key" data-k="X">X</button>
@@ -320,7 +318,7 @@
         <button type="button" class="key backspace" data-k="BACKSPACE">⌫</button>
       </div>
 
-      <!-- Row 5: Space & Return -->
+      <!-- Space Bar & Return Key -->
       <div class="kb-row">
         <button type="button" class="key space" data-k=" ">SPACE</button>
         <button type="button" class="key return-key" data-k="RETURN">RETURN ↵</button>
@@ -357,24 +355,67 @@
       } catch (e) {}
     }
 
-    // Natural human female speech using Australian English profile
-    function speakHumanVoice(phrase) {
+    // Direct Web-Audio Melodic Audio Engine (Bypasses all WebKit speech locks)
+    function playMelodicVoice(person) {
       ensureAudio();
-      try {
-        if (window.responsiveVoice) {
-          responsiveVoice.cancel();
-          // Uses Australian or UK female voice
-          responsiveVoice.speak(phrase, "Australian Female", {
-            pitch: 1.05,
-            rate: 0.9,
-            volume: 1.0
-          });
-        }
-      } catch (e) {}
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+
+      // Clean musical chime motifs tailored for toddlers
+      var tones = [];
+      if (person === 'Gaga') {
+        tones = [{f: 440, d: 0.16}, {f: 554.37, d: 0.28}]; // Upbeat major 3rd
+      } else if (person === 'Mama') {
+        tones = [{f: 587.33, d: 0.16}, {f: 880.00, d: 0.30}]; // Bright fifth
+      } else if (person === 'Grandma') {
+        tones = [{f: 523.25, d: 0.14}, {f: 659.25, d: 0.14}, {f: 783.99, d: 0.30}]; // Gentle arpeggio
+      } else if (person === 'Grandpa') {
+        tones = [{f: 261.63, d: 0.18}, {f: 329.63, d: 0.18}, {f: 392.00, d: 0.34}]; // Low warm chime
+      } else if (person === 'Uncle Dadoo') {
+        tones = [{f: 440, d: 0.12}, {f: 659.25, d: 0.12}, {f: 554.37, d: 0.12}, {f: 880, d: 0.28}]; // Playful motif
+      }
+
+      var cursor = 0;
+      tones.forEach(function(item) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(item.f, now + cursor);
+        gain.gain.setValueAtTime(0.001, now + cursor);
+        gain.gain.linearRampToValueAtTime(0.35, now + cursor + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + cursor + item.d);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + cursor);
+        osc.stop(now + cursor + item.d);
+        cursor += item.d * 0.85;
+      });
+    }
+
+    function playSendCelebration() {
+      ensureAudio();
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime;
+
+      // 4-Note Celebration Fanfare: C5 -> E5 -> G5 -> High C6
+      var notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach(function(freq, idx) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + (idx * 0.11));
+        gain.gain.setValueAtTime(0.001, now + (idx * 0.11));
+        gain.gain.linearRampToValueAtTime(0.38, now + (idx * 0.11) + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.11) + 0.35);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + (idx * 0.11));
+        osc.stop(now + (idx * 0.11) + 0.35);
+      });
     }
 
     recipientSelect.addEventListener('change', function() {
-      speakHumanVoice("To " + recipientSelect.value);
+      playMelodicVoice(recipientSelect.value);
     });
 
     function playTone(type) {
@@ -482,8 +523,8 @@
       if (isSending) return;
       isSending = true;
 
-      // 1. Natural spoken confirmation
-      speakHumanVoice("Email sent to " + recipientSelect.value + "!");
+      // 1. Play Send Fanfare
+      playSendCelebration();
 
       // 2. Play Whoosh sound & confetti
       playTone('whoosh');
